@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# on sol4
+#module load gcc/4.9.1
+#module load gdal-1.9.2/gcc-4.4.7
+#c++ -g pickGridVal.cpp NLDAS2_GRIB_to_ASCII.cpp -lgdal -o NLDAS2_GRIB_to_ASCII
+#rm *.o
+#
+## ON CLOUDFISH
+#
+#c++ -g -I ~/local/include/ pickGridVal.cpp NLDAS2_GRIB_to_ASCII.cpp -L ~/local/lib/ -lgdal -o NLDAS2_GRIB_to_ASCII
+
+c++ -g -I /modeling/tools/gdal-2.2.4/include/ pickGridVal.cpp NLDAS2_GRIB_to_ASCII.cpp -L /modeling/tools/gdal-2.2.4/lib/ -lgdal -o NLDAS2_GRIB_to_ASCII

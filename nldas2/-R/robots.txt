@@ -1,0 +1,21 @@
+# Allow our users
+User-agent: Wget
+User-agent: curl
+Disallow:
+
+User-agent: Baiduspider
+Disallow: /
+
+# Disallow bots
+User-agent: Googlebot
+User-agent: Yandex
+User-agent: SemrushBot
+User-agent: MauiBot
+User-agent: bingbot
+User-agent: ltx71 - (http://ltx71.com/)
+User-agent: dotbot
+Disallow: /
+
+User-agent: EarthEngineBot
+Allow: /data/NLDAS/NLDAS_FORA0125_H.002
+Allow: /data/GLDAS/GLDAS_NOAH025_3H.2.1

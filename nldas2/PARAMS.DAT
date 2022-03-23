@@ -1,0 +1,33 @@
+#!/bin/csh
+
+source ../../fragments/set_tree
+
+set CODE     = $tree/code/bin/wdm_insert_ALL
+
+set DATASRC  = NLDAS2
+set VERSION  = 20150521
+set PERIOD   = 1980010100-2014123123
+
+set INP_PRAD = N20150124r2
+set OUT_PRAD = N20150521
+
+set INP_MET  = N20150124r2
+set OUT_MET  = N20150521
+
+set SYEAR    = '1980'
+set EYEAR    = '2014'
+
+set HPRC = '1'
+set HTMP = '1'
+set HPET = '1'
+set HRAD = '1'
+set HWND = '1'
+set DDPT = '1'
+set DCLC = '1'
+
+set BASIN    = 'all_bgb_P6'
+#set BASIN    = 'A24047'
+#set BASIN    = 'A51115'
+#set BASIN    = 'A51109'
+#set BASIN    = 'test'
+

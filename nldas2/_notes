@@ -1,0 +1,35 @@
+
+#### Steup and link account
+Here is some background information on NLDAS2 – https://ldas.gsfc.nasa.gov/nldas/v2/forcing
+
+This page has details for how to get things setup for downloading NLDAS2 data. You will need to follow Step 2 to create an Earthdata account and link it to GES DISC – https://disc.gsfc.nasa.gov/information/howto?title=How%20to%20Download%20Data%20Files%20from%20HTTPS%20Service%20with%20wget
+
+
+
+
+#### Create cookies on Linux for downloads
+#### https://disc.gsfc.nasa.gov/data-access#mac_linux_wget
+touch .netrc
+echo "machine urs.earthdata.nasa.gov login gxb913Épsu.edu password YOURPASSWORDGOESHERE" >> .netrc
+chmod 0600 .netrc
+touch .urs_cookies
+
+
+
+
+#### Downloading NLDAS2 Data: **** Use one with cut-dirs option ****
+
+Option 1: /modeling/tools/wget-1.18/bin/wget --load-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies -np -r -NP -R "*.xml" -c -N --content-disposition https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/2017/
+
+Option 2: /modeling/tools/wget-1.18/bin/wget --load-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies -np -r -NP -R "*.xml" -c -N -nH --cut-dirs=2 --content-disposition https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/2017/
+
+
+
+
+#### Extracting time series for one or more grid cells
+
+./NLDAS2_GRIB_to_ASCII <IN_DIR> users/<USER_NAME>/<OUT_DIR> <S.YEAR> <MONTH> <DAY> <HRS> <E.YEAR> <MONTH> <DAY> <HRS> <NUM.GRIDS> <ROW> <COL>
+
+E.g., to process one or more grids
+./NLDAS2_GRIB_to_ASCII ./-R/NLDAS_FORA0125_H.002 users/BreckSullivan/OUTPUT_20191220 2017 01 01 00 2017 12 31 23 1 395 111
+./NLDAS2_GRIB_to_ASCII ./-R/NLDAS_FORA0125_H.002 users/BreckSullivan/OUTPUT_20191220 2017 01 01 00 2017 12 31 23 2 395 111 395 112
