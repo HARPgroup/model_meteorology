@@ -1,0 +1,63 @@
+#!/bin/bash
+. hspf_config
+
+if [ $# -lt 7 ]; then
+  echo "Usage: wdm_pm_one land_segment sdate=YYYYMMDD edate=YYYYMMDD datasource version met_scen prad_scen"
+  echo "Example  ./wdm_pm_one A51031 1984010101 20201231 nldas2 harp2021 nldas1221 p20211221"
+  exit
+fi
+
+land_segment=$1
+sDate=$2
+eDate=$3
+data_source=$4
+version=$5
+met_scen=$6
+prad_scen=$7
+echo "Land Segment: $1"
+echo "The start date (YYYYMMDD) of the timeframe is $sDate"
+echo "The end date (YYYMMDD) of the timeframe is $eDate"
+
+# create name for output
+oDir="$data_source/$version/$sDate-$eDate" # for use later in CBP folder output
+echo "The desired output directory is $oDir"
+# extract year from dates
+sYear=$(echo $sDate | cut -c1-4)
+eYear=$(echo $eDate | cut -c1-4)
+
+# change into cbp code tree @todo fix paths in executables so this is not necessary
+echo "cd $CBP_SRC/prad_met/"
+cd $CBP_SRC/prad_met/
+echo "cp blank_prad.wdm prad_$land_segment.wdm"
+cp blank_prad.wdm prad_$land_segment.wdm
+echo "cp blank_met.wdm met_$land_segment.wdm"
+cp blank_met.wdm met_$land_segment.wdm
+echo "Blank wdm files created"
+
+# Make sure the out dirs are set
+# wdm_insert_ALL expects the data to be in 
+# CBP_ROOT/input/unformatted/[data source]/[version]
+# ex: cbp_root/unformatted/nldas2/harp2021
+if [ ! -d $oDir ]; then
+  if [ ! -d "$CBP_ROOT/input/unformatted" ] ; then mkdir  $CBP_ROOT/input/unformatted; fi
+  if [ ! -d "$CBP_ROOT/input/unformatted/$data_source" ] ; then mkdir  $CBP_ROOT/input/unformatted/$data_source ; fi
+  if [ ! -d "$CBP_ROOT/input/unformatted/RNMax" ] ; then mkdir  $CBP_ROOT/input/unformatted/RNMax ; fi
+  if [ ! -d "$CBP_ROOT/input/unformatted/$data_source/$version" ] ; then mkdir  $CBP_ROOT/input/unformatted/$data_source/$version ; fi
+  if [ ! -d "$CBP_ROOT/input/unformatted/$data_source/$version/RNMax" ] ; then mkdir  $CBP_ROOT/input/unformatted/$data_source/$version/RNMax ; fi
+  echo "mkdir $CBP_ROOT/input/unformatted/$oDir"
+  mkdir $CBP_ROOT/input/unformatted/$oDir
+fi
+# get all the basic landsegment files
+echo "cp $NLDAS_ROOT/out/lseg_csv/$sDate-$eDate/$land_segment.* $CBP_ROOT/input/unformatted/$oDir/"
+cp $NLDAS_ROOT/out/lseg_csv/$sDate-$eDate/$land_segment.* $CBP_ROOT/input/unformatted/$oDir/
+# copy the RNMAx file. Note: this does NOT go in the YYYYMMDD-YYYYMMDD folder
+# instead, it is one above as it shoudl be a summary common to all
+echo "cp $NLDAS_ROOT/out/lseg_csv/RNMax/$land_segment.RNMax $CBP_ROOT/input/unformatted/$data_source/$version/RNMax"
+cp cp $NLDAS_ROOT/out/lseg_csv/RNMax/$land_segment.RNMax $CBP_ROOT/input/unformatted/$data_source/$version/RNMax/
+# now convert these CSVs to WDMs
+echo "echo $land_segment nldas2 harp2021 $sDate-$eDate $sYear $eYear 1 1 1 1 1 1 1 | wdm_insert_ALL"
+echo "$land_segment nldas2 harp2021 $sDate-$eDate $sYear $eYear 1 1 1 1 1 1 1" | wdm_insert_ALL
+echo "wdm files populated"
+
+mv "met_$land_segment.wdm" $CBP_ROOT/input/scenario/climate/met/$met_scen/
+mv "prad_$land_segment.wdm" $CBP_ROOT/input/scenario/climate/prad/$prad_scen/
