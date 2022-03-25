@@ -1,0 +1,8 @@
+#!/bin/bash
+# call: get_land_grid_cfg $landname
+
+landname=$1
+
+# get the grid cells for the requested land unit
+land_cfg=`fgrep -h $landname seg_maps/* | head -n 1`
+echo $land_cfg

@@ -1,0 +1,12 @@
+#!/bin/bash
+# call get_land_grid_cells $met_land_cells
+landname=$1
+# removes the land segment from the first position
+# yields a param pair list in format x371y99
+met_land_cells=`nldas_land_grids $landname`
+
+# use a // to escape x I think
+met_land_cells=${met_land_cells//x/}
+# replace y with aspace use a // to escape y I think
+met_land_cells=${met_land_cells//y/ }
+echo $met_land_cells

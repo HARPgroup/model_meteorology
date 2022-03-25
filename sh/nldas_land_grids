@@ -1,0 +1,8 @@
+#!/bin/bash
+# call: get_land_grids $land_cfg
+landname=$1
+# removes the land segment from the first position
+# yields a param pair list in format x371y99
+land_cfg=`nldas_land_cfg $landname`
+met_land_grids=${land_cfg/$landname/}
+echo $met_land_grids
