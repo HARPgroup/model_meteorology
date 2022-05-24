@@ -9,7 +9,7 @@ oDir=$3
 
 
 # downloading the data
-wget --load-cookies ~/.urs_cookies --auth-no-challenge=on --keep-session-cookies -np -r -NP -R "*.xml" -c -N --content-disposition https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/$year/$jDay/
+wget --load-cookies .urs_cookies --auth-no-challenge=on --keep-session-cookies -np -r -NP -R "*.xml" -c -N --content-disposition https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/$year/$jDay/
 echo "data downloaded"
 
 # moving it to desired directory
