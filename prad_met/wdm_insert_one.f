@@ -50,25 +50,22 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 ******************** END SPECIFICATIONS ********************************
       read(*,*) wdmfname, csvfname, 
      .          dsn, hasheader, msgfname
-      call lencl(datasource,lendatasource)
-      call lencl(version,lenversion)
-      call lencl(period, lenperiod)
-      call lencl(lseg, lenlseg)
-      print*, lseg
-      print*, "LSEG string length is ",lenlseg
+      print*, "Reading CSV ",csvfname
       if (hasheader.gt.0) then
           hasheader = 1
       end if
 
 *********** Open WDM and Data file *************************************
       call wdbopn(msgfile,msgfname,1,retcod)  ! open msgfile read only
-      if (retcod.ne.0) stop 'ERROR opening message wdm'
+      if (retcod.ne.0) then
+              print*, 'Error opening Message: ', msgfname
+              stop 'halting'
+      end if
 
 
 ************************************************************************
 ************************ ##### Write START ##### ************************
 ************************************************************************
-      wdmfname = 'prad_'//lseg(:lenlseg)//'.wdm'
       call wdbopn(wdmfile,wdmfname,0,retcod)  ! open read/write 
       if (retcod.ne.0) then
              print*, 'retcod = ', retcod 
@@ -87,16 +84,18 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
            call d2x(longline,last)
            if (csvndata.gt.hasheader) then 
                read(longline,*,end=994,err=994)
-         .     csvdata(csvndata,1),csvdata(csvndata,2),
-         .     csvdata(csvndata,3),csvdata(csvndata,4),
-         .     csvdata(csvndata,5)
+     .         csvdata(csvndata,1),csvdata(csvndata,2),
+     .         csvdata(csvndata,3),csvdata(csvndata,4),
+     .         csvdata(csvndata,5)
            end if
 
-           if (csvndata.eq.2) then 
+           if (csvndata.eq.hasheader) then 
                sdate(1) = csvdata(csvndata,1)
                sdate(2) = csvdata(csvndata,2)
                sdate(3) = csvdata(csvndata,3)
                sdate(4) = csvdata(csvndata,4)
+               sdate(5) = 0
+               sdate(6) = 0
            end if
            !print*,csvdata(csvndata,1),csvdata(csvndata,2)
            csvndata=csvndata+1
@@ -104,11 +103,21 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
  2000 continue
       close (csvfile)
       csvndata = csvndata - 1
+      edate(1) = csvdata(csvndata,1)
+      edate(2) = csvdata(csvndata,2)
+      edate(3) = csvdata(csvndata,3)
+      edate(4) = csvdata(csvndata,4)
+      edate(5) = 0
+      edate(6) = 0
       print*,'Read',' ',csvndata,' lines from',csvfile
-      stop 'STOP - debug'
+*************check if data needed is there, calculates nvals*********
+      call timdif(
+     I            sdate,edate,HCODE,TSTEP,
+     O            nvals)
 ************open wdm and read existing data*****************************
-      dsn = 2000
-      print*,lseg(:lenlseg),' ',dsn,' HPRC'
+      print*,wdmfname,' DSN:',dsn, ', from: ', sdate(1)
+      print*,'Calling wdtget(',wdmfile,dsn,TSTEP,sdate(1),nvals
+      print*,'    ',dtran, qualfg,HCODE,')'
       call wdtget(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
      I            dtran, qualfg, HCODE,
@@ -132,11 +141,15 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       call wdflcl(
      I            wdmfile,
      O            retcod)
-      if (retcod.ne.0) stop 'ERROR closing wdm'
+
+      if (retcod.ne.0) then 
+            print*, 'retcod = ', retcod
+            stop 'ERROR closing wdm'
       end if
 ************************************************************************
 ************************ ##### Write FINISH ##### ***********************
 ************************************************************************
+C      stop 'STOP'
 
       close (msgfile)
       return
