@@ -7,14 +7,14 @@
 C     ERROR CODES       
       integer err, retcod
 C     FILE AND INPUT NAMES
-      character*6   lseg
-      character*64  wdmfname,msgfname
-      character*200 csvfname
-      character*100 datasource, version, period
-      character*300 longline
+      character     lseg*12
+      character     wdmfname*64,msgfname*64
+      character     csvfname*200
+      character     datasource*100, version*100, period*100
+      character     longline*300
       integer last
 C     SIZE OF INPUT NAMES
-      integer lendatasource, lenversion, lenperiod
+      integer lendatasource, lenversion, lenperiod, lenlseg
 C     SIZE OF DATE ARRAYS
       integer ndate
       parameter (ndate=6)
@@ -52,7 +52,9 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       call lencl(datasource,lendatasource)
       call lencl(version,lenversion)
       call lencl(period, lenperiod)
+      call lencl(lseg, lenlseg)
       print*, lseg
+      print*, "LSEG string length is ",lenlseg
 **********start and end dates for entire timeseries*********************
       sdate(1) = YEAR1
       sdate(2) = 1
@@ -81,10 +83,11 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 ************************ ##### HPRC START ##### ************************
 ************************************************************************
       if ( HPRC .eq. 1 ) then
-      wdmfname = 'prad_'//lseg//'.wdm'
+      wdmfname = 'prad_'//lseg(:lenlseg)//'.wdm'
       call wdbopn(wdmfile,wdmfname,0,retcod)  ! open read/write 
       if (retcod.ne.0) then
              print*, 'retcod = ', retcod 
+             print*, wdmfname
              stop 'ERROR opening wdm'
       end if
       hmin = 0.0
@@ -94,7 +97,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       csvfname = '../../../'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
-     .       '/'//period(:lenperiod)//'/'//lseg//'.PRC'
+     .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.PRC'
       print*,csvfname
       open(csvfile,file=csvfname,status='old',iostat=err)
 
@@ -146,7 +149,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       dacc = 0.0
       do i = 1,csvndata
            if(oldyear.ne.csvdata(i,1)) then
-                   print*,'HPRC, ',lseg,',',oldyear,',',dacc
+                   print*,'HPRC, ',lseg(:lenlseg),',',oldyear,',',dacc
                    if(dacc.lt.ymin.or.dacc.gt.ymax) then
                         print*, 'PROBLEM ERROR Annual data out of range'
                    end if
@@ -155,10 +158,10 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
            end if
            dacc = dacc + csvdata(i,5)
       end do
-      print*,'HPRC, ',lseg,',',oldyear,',',dacc
+      print*,'HPRC, ',lseg(:lenlseg),',',oldyear,',',dacc
 ************open wdm and read existing data*****************************
       dsn = 2000
-      print*,lseg,' ',dsn,' HPRC'
+      print*,lseg(:lenlseg),' ',dsn,' HPRC'
       call wdtget(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
      I            dtran, qualfg, HCODE,
@@ -200,7 +203,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 ************************ ##### HTMP START ##### ************************
 ************************************************************************
       if ( HTMP .eq. 1) then
-      wdmfname = 'met_'//lseg//'.wdm'
+      wdmfname = 'met_'//lseg(:lenlseg)//'.wdm'
       call wdbopn(wdmfile,wdmfname,0,retcod)  ! open read/write 
       if (retcod.ne.0) then
              print*, 'retcod = ', retcod 
@@ -213,7 +216,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       csvfname = '../../../'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
-     .       '/'//period(:lenperiod)//'/'//lseg//'.TMP'
+     .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.TMP'
       print*,csvfname
       open(csvfile,file=csvfname,status='old',iostat=err)
 
@@ -269,7 +272,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       do i = 1,csvndata
            if(oldyear.ne.csvdata(i,1)) then
                    dacc = dacc / ndacc
-                   print*,'HTMP, ',lseg,',',oldyear,',',dacc
+                   print*,'HTMP, ',lseg(:lenlseg),',',oldyear,',',dacc
                    if(dacc.lt.ymin.or.dacc.gt.ymax) then
                         print*, 'PROBLEM ERROR Annual data out of range'
                    end if
@@ -281,10 +284,10 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
            ndacc = ndacc + 1
       end do
       dacc = dacc / ndacc
-      print*,'HTMP, ',lseg,',',oldyear,',',dacc
+      print*,'HTMP, ',lseg(:lenlseg),',',oldyear,',',dacc
 ************open wdm and read existing data*****************************
       dsn = 1004
-      print*,lseg,' ',dsn,' ATMP'
+      print*,lseg(:lenlseg),' ',dsn,' ATMP'
       call wdtget(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
      I            dtran, qualfg, HCODE,
@@ -328,7 +331,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 ************************ ##### HPET START ##### ************************
 ************************************************************************
       if ( HPET .eq. 1 ) then
-      wdmfname = 'met_'//lseg//'.wdm'
+      wdmfname = 'met_'//lseg(:lenlseg)//'.wdm'
       call wdbopn(wdmfile,wdmfname,0,retcod)  ! open read/write 
       if (retcod.ne.0) then
              print*, 'retcod = ', retcod 
@@ -341,7 +344,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       csvfname = '../../../'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
-     .       '/'//period(:lenperiod)//'/'//lseg//'.PET'
+     .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.PET'
       print*,csvfname
       open(csvfile,file=csvfname,status='old',iostat=err)
 
@@ -393,7 +396,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       dacc = 0.0
       do i = 1,csvndata
            if(oldyear.ne.csvdata(i,1)) then
-                   print*,'HPET, ',lseg,',',oldyear,',',dacc
+                   print*,'HPET, ',lseg(:lenlseg),',',oldyear,',',dacc
                    if(dacc.lt.ymin.or.dacc.gt.ymax) then
                         print*, 'PROBLEM ERROR Annual data out of range'
                    end if
@@ -402,10 +405,10 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
            end if
            dacc = dacc + csvdata(i,5)
       end do
-      print*,'HPET, ',lseg,',',oldyear,',',dacc
+      print*,'HPET, ',lseg(:lenlseg),',',oldyear,',',dacc
 ************open wdm and read existing data*****************************
       dsn = 1000
-      print*,lseg,' ',dsn,' EVAP'
+      print*,lseg(:lenlseg),' ',dsn,' EVAP'
       call wdtget(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
      I            dtran, qualfg, HCODE,
@@ -450,7 +453,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 ************************ ##### HRAD START ##### ************************
 ************************************************************************
       if ( HRAD .eq. 1 ) then
-      wdmfname = 'met_'//lseg//'.wdm'
+      wdmfname = 'met_'//lseg(:lenlseg)//'.wdm'
       call wdbopn(wdmfile,wdmfname,0,retcod)  ! open read/write 
       if (retcod.ne.0) then
              print*, 'retcod = ', retcod 
@@ -463,7 +466,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       csvfname = '../../../'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
-     .       '/'//period(:lenperiod)//'/'//lseg//'.RAD'
+     .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.RAD'
       print*,csvfname
       open(csvfile,file=csvfname,status='old',iostat=err)
 
@@ -517,7 +520,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       do i = 1,csvndata
            if(oldyear.ne.csvdata(i,1)) then
                    dacc = dacc / ndacc
-                   print*,'HRAD, ',lseg,',',oldyear,',',dacc
+                   print*,'HRAD, ',lseg(:lenlseg),',',oldyear,',',dacc
                    if(dacc.lt.ymin.or.dacc.gt.ymax) then
                         print*, 'PROBLEM ERROR Annual data out of range'
                    end if
@@ -529,10 +532,10 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
            ndacc = ndacc + 1
       end do
       dacc = dacc / ndacc
-      print*,'HRAD, ',lseg,',',oldyear,',',dacc
+      print*,'HRAD, ',lseg(:lenlseg),',',oldyear,',',dacc
 ************open wdm and read existing data*****************************
       dsn = 1003
-      print*,lseg,' ',dsn,' RADH'
+      print*,lseg(:lenlseg),' ',dsn,' RADH'
       call wdtget(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
      I            dtran, qualfg, HCODE,
@@ -579,7 +582,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 ************************ ##### HWND START ##### ************************
 ************************************************************************
       if ( HWND .eq. 1 ) then
-      wdmfname = 'met_'//lseg//'.wdm'
+      wdmfname = 'met_'//lseg(:lenlseg)//'.wdm'
       call wdbopn(wdmfile,wdmfname,0,retcod)  ! open read/write 
       if (retcod.ne.0) then
              print*, 'retcod = ', retcod 
@@ -592,7 +595,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       csvfname = '../../../'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
-     .       '/'//period(:lenperiod)//'/'//lseg//'.WND'
+     .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.WND'
       print*,csvfname
       open(csvfile,file=csvfname,status='old',iostat=err)
 
@@ -646,7 +649,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       do i = 1,csvndata
            if(oldyear.ne.csvdata(i,1)) then
                    dacc = dacc / ndacc
-                   print*,'HWND, ',lseg,',',oldyear,',',dacc
+                   print*,'HWND, ',lseg(:lenlseg),',',oldyear,',',dacc
                    if(dacc.lt.ymin.or.dacc.gt.ymax) then
                         print*, 'PROBLEM ERROR Annual data out of range'
                    end if
@@ -658,10 +661,10 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
            ndacc = ndacc + 1
       end do
       dacc = dacc / ndacc
-      print*,'HWND, ',lseg,',',oldyear,',',dacc
+      print*,'HWND, ',lseg(:lenlseg),',',oldyear,',',dacc
 ************open wdm and read existing data*****************************
       dsn = 1002
-      print*,lseg,' ',dsn,' WNDH'
+      print*,lseg(:lenlseg),' ',dsn,' WNDH'
       call wdtget(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
      I            dtran, qualfg, HCODE,
@@ -709,7 +712,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 ************************ ##### DDPT START ##### ************************
 ************************************************************************
       if ( DDPT .eq. 1) then
-      wdmfname = 'met_'//lseg//'.wdm'
+      wdmfname = 'met_'//lseg(:lenlseg)//'.wdm'
       call wdbopn(wdmfile,wdmfname,0,retcod)  ! open read/write 
       if (retcod.ne.0) then
              print*, 'retcod = ', retcod 
@@ -722,7 +725,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       csvfname = '../../../'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
-     .       '/'//period(:lenperiod)//'/'//lseg//'.DPT'
+     .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.DPT'
       print*,csvfname
       open(csvfile,file=csvfname,status='old',iostat=err)
 
@@ -778,7 +781,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       do i = 1,csvndata
            if(oldyear.ne.csvdata(i,1)) then
                    dacc = dacc / ndacc
-                   print*,'DDPT, ',lseg,',',oldyear,',',dacc
+                   print*,'DDPT, ',lseg(:lenlseg),',',oldyear,',',dacc
                    if(dacc.lt.ymin.or.dacc.gt.ymax) then
                         print*, 'PROBLEM ERROR Annual data out of range'
                    end if
@@ -790,10 +793,10 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
            ndacc = ndacc + 1
       end do
       dacc = dacc / ndacc
-      print*,'DDPT, ',lseg,',',oldyear,',',dacc
+      print*,'DDPT, ',lseg(:lenlseg),',',oldyear,',',dacc
 ************open wdm and read existing data*****************************
       dsn = 1001
-      print*,lseg,' ',dsn,' DEWP'
+      print*,lseg(:lenlseg),' ',dsn,' DEWP'
       nvals = nvals/24
       call wdtget(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
@@ -842,7 +845,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 ************************ ##### DCLC START ##### ************************
 ************************************************************************
       if ( DCLC .eq. 1) then
-      wdmfname = 'met_'//lseg//'.wdm'
+      wdmfname = 'met_'//lseg(:lenlseg)//'.wdm'
       call wdbopn(wdmfile,wdmfname,0,retcod)  ! open read/write 
       if (retcod.ne.0) then
              print*, 'retcod = ', retcod 
@@ -852,7 +855,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       csvfname = '../../../'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
-     .       '/'//'RNMax'//'/'//lseg//'.RNMax'
+     .       '/'//'RNMax'//'/'//lseg(:lenlseg)//'.RNMax'
       open(csvfile,file=csvfname,status='old',iostat=err)
       if (err.ne.0) stop 'ERROR opening .RNMax file '
 
@@ -869,7 +872,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       csvfname = '../../../'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
-     .       '/'//period(:lenperiod)//'/'//lseg//'.PRC'
+     .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.PRC'
       print*,csvfname
       open(csvfile,file=csvfname,status='old',iostat=err)
 
@@ -916,7 +919,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       csvfname = '../../../'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
-     .       '/'//period(:lenperiod)//'/'//lseg//'.RAD'
+     .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.RAD'
       print*,csvfname
       open(csvfile,file=csvfname,status='old',iostat=err)
 
@@ -983,7 +986,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       do i = 1,csvndata
            if(oldyear.ne.csvdata(i,1)) then
                    dacc = dacc / ndacc
-                   print*,'DCLC, ',lseg,',',oldyear,',',dacc
+                   print*,'DCLC, ',lseg(:lenlseg),',',oldyear,',',dacc
                    if(dacc.lt.ymin.or.dacc.gt.ymax) then
                         print*, 'PROBLEM ERROR Annual data out of range'
                    end if
@@ -995,10 +998,10 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
            ndacc = ndacc + 1
       end do
       dacc = dacc / ndacc
-      print*,'DCLC, ',lseg,',',oldyear,',',dacc
+      print*,'DCLC, ',lseg(:lenlseg),',',oldyear,',',dacc
 ************open wdm and read existing data*****************************
       dsn = 1005
-      print*,lseg,' ',dsn,' CLDC'
+      print*,lseg(:lenlseg),' ',dsn,' CLDC'
       nvals = nvals/24
       call wdtget(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
