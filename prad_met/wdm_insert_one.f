@@ -23,10 +23,10 @@ C     SIZE OF DATE ARRAYS
 C     START AND END DATES IN WDM FORMAT         
       integer sdate(ndate), edate(ndate)
 C     WDM IO PARAMS
-      integer HCODE, DCODE ! Hourly, Daily
+      integer HCODE, DCODE, code ! Hourly, Daily
       parameter (HCODE=3, DCODE=4)
       integer TSTEP, dtran, qualfg, dtovwr
-      parameter (TSTEP=1, dtran=0, qualfg=0, dtovwr=1)
+      parameter (dtran=0, qualfg=0, dtovwr=1)
 C     FILE UNIT NUMBERS      
       integer csvfile, wdmfile, msgfile
       parameter (csvfile=13, wdmfile=12,msgfile=9)
@@ -49,7 +49,12 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       integer   HPRC, HTMP, HPET, HRAD, HWND, DDPT, DCLC
 ******************** END SPECIFICATIONS ********************************
       read(*,*) wdmfname, csvfname, 
-     .          dsn, hasheader, msgfname
+     .          dsn, hasheader, TSTEP, msgfname
+      if (TSTEP.eq.1) then
+          code = HCODE
+      else
+          code = DCODE
+      end if
       print*, "Reading CSV ",csvfname
       if (hasheader.gt.0) then
           hasheader = 1
@@ -110,19 +115,31 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       edate(5) = 0
       edate(6) = 0
       print*,'Read',' ',csvndata,' lines from',csvfile
+      print*,'First val=',' ',csvdata(1,5)
+      print*,'First yr=',' ',csvdata(1,1)
+      print*,'First mo=',' ',csvdata(1,2)
+      print*,'First day=',' ',csvdata(1,3)
+      print*,'First hr=',' ',csvdata(1,4)
+      print*,'Last val=',csvdata(csvndata,5)
 *************check if data needed is there, calculates nvals*********
       call timdif(
-     I            sdate,edate,HCODE,TSTEP,
+     I            sdate,edate,code,TSTEP,
      O            nvals)
 ************open wdm and read existing data*****************************
-      print*,wdmfname,' DSN:',dsn, ', from: ', sdate(1)
+      print*,wdmfname,' DSN:',dsn
+      print*,'from: ', sdate(1),sdate(2),sdate(3),sdate(4)
       print*,'Calling wdtget(',wdmfile,dsn,TSTEP,sdate(1),nvals
-      print*,'    ',dtran, qualfg,HCODE,')'
+      print*,'    ',dtran, qualfg,code,')'
       call wdtget(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
-     I            dtran, qualfg, HCODE,
+     I            dtran, qualfg, code,
      O            hval, retcod)
-      if (retcod.ne.0) stop 'PROBLEM ERROR getting wdm timeseries'
+      if (retcod.ne.0) then
+             print*, 'retcod = ', retcod 
+             print*, wdmfname
+             stop 'PROBLEM ERROR getting wdm timeseries'
+      end if
+      print*,'Rertrieved existing data from', wdmfname
 ************copy climate data from csv array to insert hval ************
       do i = 1, nvals
            hval(i)=csvdata(i,5)
@@ -131,7 +148,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       print*,'writing to ', wdmfname
       call wdtput(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
-     I            dtovwr, qualfg, HCODE,hval,
+     I            dtovwr, qualfg, code,hval,
      O            retcod)
       if (retcod.ne.0) then
             print*, 'retcod = ', retcod

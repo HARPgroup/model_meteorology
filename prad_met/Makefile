@@ -2,6 +2,7 @@ ifndef CBP_SRC
   $(error CBP_SRC is undefined. Please run ". hspf_config" first or set CBP_SRC manually)
 endif
 
+BINDIR =  /usr/local/bin
 PROG1 =  wdm_insert_ALL
 PROG2 =  wdm_insert_one
 
