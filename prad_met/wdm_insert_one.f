@@ -15,6 +15,8 @@ C     FILE AND INPUT NAMES
       character     datasource*100, version*100, period*100
       character     longline*300
       integer last, hasheader
+C     IMPORT SETTINGS
+      character     mode*1 ! w=overwrite, a=add
 C     SIZE OF INPUT NAMES
       integer lendatasource, lenversion, lenperiod, lenlseg
 C     SIZE OF DATE ARRAYS
@@ -23,10 +25,10 @@ C     SIZE OF DATE ARRAYS
 C     START AND END DATES IN WDM FORMAT         
       integer sdate(ndate), edate(ndate)
 C     WDM IO PARAMS
-      integer HCODE, DCODE ! Hourly, Daily
+      integer HCODE, DCODE, code ! Hourly, Daily
       parameter (HCODE=3, DCODE=4)
       integer TSTEP, dtran, qualfg, dtovwr
-      parameter (TSTEP=1, dtran=0, qualfg=0, dtovwr=1)
+      parameter (dtran=0, qualfg=0, dtovwr=1)
 C     FILE UNIT NUMBERS      
       integer csvfile, wdmfile, msgfile
       parameter (csvfile=13, wdmfile=12,msgfile=9)
@@ -47,28 +49,39 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       real      hmin,hmax,ymin,ymax
       integer   YEAR1, YEAR2
       integer   HPRC, HTMP, HPET, HRAD, HWND, DDPT, DCLC
+C MISCELLANEOUS
+      character arg1*32,helpmessage*128
+      helpmessage = "Use: echo 'dest.wdm source.csv dsn"
+     .              //" timestep mode(w,a) msgwdm' | wdm_insert_one"
 ******************** END SPECIFICATIONS ********************************
-      read(*,*) wdmfname, csvfname, 
-     .          dsn, hasheader, msgfname
-      call lencl(datasource,lendatasource)
-      call lencl(version,lenversion)
-      call lencl(period, lenperiod)
-      call lencl(lseg, lenlseg)
-      print*, lseg
-      print*, "LSEG string length is ",lenlseg
-      if (hasheader.gt.0) then
-          hasheader = 1
+      if (command_argument_count().gt.0) then
+         call get_command_argument(1,arg1)
+         print*,"argument:", arg1
+         if (arg1.eq.'--help') then
+            print*, helpmessage
+            stop 'Done.'
+         end if
       end if
+      read(*,*) wdmfname, csvfname, 
+     .          dsn, TSTEP, mode, msgfname
+      if (TSTEP.eq.1) then
+          code = HCODE
+      else
+          code = DCODE
+      end if
+      print*, "Reading CSV ",csvfname
 
 *********** Open WDM and Data file *************************************
       call wdbopn(msgfile,msgfname,1,retcod)  ! open msgfile read only
-      if (retcod.ne.0) stop 'ERROR opening message wdm'
+      if (retcod.ne.0) then
+              print*, 'Error opening Message: ', msgfname
+              stop 'halting'
+      end if
 
 
 ************************************************************************
 ************************ ##### Write START ##### ************************
 ************************************************************************
-      wdmfname = 'prad_'//lseg(:lenlseg)//'.wdm'
       call wdbopn(wdmfile,wdmfname,0,retcod)  ! open read/write 
       if (retcod.ne.0) then
              print*, 'retcod = ', retcod 
@@ -81,48 +94,74 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 
       if (err.ne.0) stop 'ERROR opening csv '
 *************read in the data to local variables************************
-      csvndata = 1
+      csvndata = 0
       do
            read (csvfile,'(a300)',end=2000) longline
            call d2x(longline,last)
-           if (csvndata.gt.hasheader) then 
-               read(longline,*,end=994,err=994)
-         .     csvdata(csvndata,1),csvdata(csvndata,2),
-         .     csvdata(csvndata,3),csvdata(csvndata,4),
-         .     csvdata(csvndata,5)
-           end if
+           csvndata = csvndata + 1
+           read(longline,*,end=994,err=994)
+     .     csvdata(csvndata,1),csvdata(csvndata,2),
+     .     csvdata(csvndata,3),csvdata(csvndata,4),
+     .     csvdata(csvndata,5)
 
-           if (csvndata.eq.2) then 
-               sdate(1) = csvdata(csvndata,1)
-               sdate(2) = csvdata(csvndata,2)
-               sdate(3) = csvdata(csvndata,3)
-               sdate(4) = csvdata(csvndata,4)
-           end if
-           !print*,csvdata(csvndata,1),csvdata(csvndata,2)
-           csvndata=csvndata+1
       end do
  2000 continue
       close (csvfile)
-      csvndata = csvndata - 1
+      sdate(1) = INT(csvdata(1,1))
+      sdate(2) = INT(csvdata(1,2))
+      sdate(3) = INT(csvdata(1,3))
+      sdate(4) = INT(csvdata(1,4))
+      sdate(5) = 0
+      sdate(6) = 0
+      !print*,csvdata(csvndata,1),csvdata(csvndata,2)
+      edate(1) = INT(csvdata(csvndata,1))
+      edate(2) = INT(csvdata(csvndata,2))
+      edate(3) = INT(csvdata(csvndata,3))
+      edate(4) = INT(csvdata(csvndata,4))
+      edate(5) = 0
+      edate(6) = 0
       print*,'Read',' ',csvndata,' lines from',csvfile
-      stop 'STOP - debug'
+      print*,'First yr=',' ',csvdata(1,1)
+      print*,'First yr=',' ',sdate(1)
+      print*,'Last yr=',' ',edate(1)
+      print*,'Last val=',csvdata(csvndata,5)
+*************check if data needed is there, calculates nvals*********
+      call timdif(
+     I            sdate,edate,code,TSTEP,
+     O            nvals)
 ************open wdm and read existing data*****************************
-      dsn = 2000
-      print*,lseg(:lenlseg),' ',dsn,' HPRC'
+      print*,wdmfname,' DSN:',dsn
+      print*,'from: ', sdate(1),sdate(2),sdate(3),sdate(4)
+      print*,'Calling wdtget(',wdmfile,dsn,TSTEP,sdate(1),nvals
+      print*,'    ',dtran, qualfg,code,')'
       call wdtget(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
-     I            dtran, qualfg, HCODE,
+     I            dtran, qualfg, code,
      O            hval, retcod)
-      if (retcod.ne.0) stop 'PROBLEM ERROR getting wdm timeseries'
+      if (retcod.ne.0) then
+             print*, 'retcod = ', retcod 
+             print*, wdmfname
+             stop 'PROBLEM ERROR getting wdm timeseries'
+      end if
+      print*,'Rertrieved existing data from', wdmfname
 ************copy climate data from csv array to insert hval ************
-      do i = 1, nvals
-           hval(i)=csvdata(i,5)
-      end do
+C WRITE/REPLACE MODE
+      if (mode.eq.'w') then
+        do i = 1, nvals
+          hval(i)=csvdata(i,5)
+        end do
+      end if
+C ADDITIVE MODE
+      if (mode.eq.'a') then
+        do i = 1, nvals
+          hval(i)=csvdata(i,5) + hval(i)
+        end do
+      end if
 ************write back to the wdm file**********************************
       print*,'writing to ', wdmfname
       call wdtput(
      I            wdmfile,dsn,TSTEP,sdate,nvals,
-     I            dtovwr, qualfg, HCODE,hval,
+     I            dtovwr, qualfg, code,hval,
      O            retcod)
       if (retcod.ne.0) then
             print*, 'retcod = ', retcod
@@ -132,11 +171,15 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       call wdflcl(
      I            wdmfile,
      O            retcod)
-      if (retcod.ne.0) stop 'ERROR closing wdm'
+
+      if (retcod.ne.0) then 
+            print*, 'retcod = ', retcod
+            stop 'ERROR closing wdm'
       end if
 ************************************************************************
 ************************ ##### Write FINISH ##### ***********************
 ************************************************************************
+C      stop 'STOP'
 
       close (msgfile)
       return
