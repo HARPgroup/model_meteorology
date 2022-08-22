@@ -1,166 +1,161 @@
 ##### This script runs QA on land segment summary stat data. It generates a txt file with list of land segments it flags.
-## Last Updated 4/20/21
-## HARP Group
-## To change metric and QA testing value alter lines 33 and 45
-## Change the .XXX label at the end of the paste statement in line 36 to correspond to metric (ex: PRC = precipitation)
-## Change the numeric condition in the if statement to fit needs in line 45 (for precipitation > 1 corresponds to > 1 in/hr)
-
-# load packages and vahydro functions
-#.libPaths("/var/www/R/x86_64-pc-linux-gnu-library/")
-site <- "http://deq1.bse.vt.edu:81/d.dh"  #Specify the site of interest, either d.bet OR d.dh
-basepath <- '/var/www/R';
-source(paste(basepath,'config.R',sep='/'))
-
-library(lubridate)
-library(sqldf)
-library(IHA)
-library(zoo)
-library(data.table)
-
-# load lseg_functions
-site <- "http://deq1.bse.vt.edu:81/met/out/lseg_csv/1984010100-2020123123/" # temporary cloud url
-dir <- "/backup/meteorology/" # directory where met data is stored
-#source(paste(github_location,"HARParchive/HARP-2021-2022","lseg_functions.R", sep = "/"))
-
-# load AllLandsegList
-#AllLandsegList <- scan(file = "https://raw.githubusercontent.com/HARPgroup/HARParchive/master/GIS_layers/p5_landsegments.txt", what = character())
-AllLandsegList <- scan(file = paste0(dir, "p5_landsegments.txt"), what = character())
-paste("loaded land segment list")
-
-# instantiate data frames and variables for loops
-i <- 1
-ErrorLsegs <- data.frame()
-ErrorYear <- data.frame()
-ErrorMonth <- data.frame()
-ErrorDay <- data.frame()
-ErrorHour <- data.frame()
-ErrorValue <- data.frame()
-paste("data frames instantiated")
-while(i<=length(AllLandsegList)){
-  
-  landseg <- AllLandsegList[i]
-  print(paste0("current landsegment: ", landseg))
-
-  # read in lseg_csv
-  #timeSeries <- fread(paste0(site,landseg,".PRC"))
-  # code with correct input directory if running on deq machine
-  timeSeries <- fread(paste0(dir, "out/lseg_csv/1984010100-2020123123/",landseg,".PRC"))
-  #timeSeries <- read.table(paste0(dir, "out/lseg_csv/1984010100-2020123123/",landseg,".PRC"), header = FALSE, sep = ",")
-  print(paste0(landseg," data read"))
-
-  # line of code to help run even with incomplete lseg_csv
-  timeSeries <- timeSeries[-nrow(timeSeries),]
-  
-  # loops iterates through to check for abnormally values 
-  j <- 1
-  while (j <= nrow(timeSeries)) {
-    
-    if (as.numeric(timeSeries$V5[j]) > 4.0) {
-      ErrorLsegs <- rbind(ErrorLsegs, paste0(landseg))
-      ErrorYear <- rbind(ErrorYear, paste0(timeSeries$V1[j]))
-      ErrorMonth <- rbind(ErrorMonth, paste0(timeSeries$V2[j]))
-      ErrorDay <- rbind(ErrorDay, paste0(timeSeries$V3[j]))
-      ErrorHour <- rbind(ErrorHour, paste0(timeSeries$V4[j]))
-      ErrorValue <- rbind(ErrorValue, paste0(timeSeries$V5[j]))
-      print(paste0(landseg, " has an abnormality value"))
-    }
-    j <- j + 1
-  }
-  print(paste0(landseg, " abnormallity values checked"))
-  i <- i+ 1
-}
-
-# creates data framed of flagged values with corresponding time and land segment
-FlaggedData <- data.frame(ErrorYear, ErrorMonth, ErrorDay, ErrorHour, ErrorLsegs, ErrorValue)
-paste("Flagged data frame created")
-
-# create and save error landsegment file as txt
-#write.table(FlaggedData,"C:/Users/kylew/Documents/R/HARPSpring2021/NLDAS-2/p5FlaggedLsegsPRC.txt", 
-#            row.names = FALSE, col.names = FALSE)
-# code to write it to /backup/meteorology directory if we ever decide to
-write.table(FlaggedData,paste0(dir, "p5FlaggedLsegsPRC.txt"), 
-           row.names = FALSE, col.names = FALSE, sep = ",")
-paste("Data written to table")
-##### This script runs QA on land segment summary stat data. It generates a txt file with list of land segments it flags.
 ## Last Updated 4/26/22
 ## HARP Group
 ## To change metric and QA testing value alter lines 33 and 45
 ## Change the .XXX label at the end of the paste statement in line 36 to correspond to metric (ex: PRC = precipitation)
 ## Change the numeric condition in the if statement to fit needs in line 45 (for precipitation > 1 corresponds to > 1 in/hr)
 
-# load packages and vahydro functions
+# load packages
 #.libPaths("/var/www/R/x86_64-pc-linux-gnu-library/")
-site <- "http://deq1.bse.vt.edu:81/d.dh"  #Specify the site of interest, either d.bet OR d.dh
 basepath <- '/var/www/R';
 source(paste(basepath,'config.R',sep='/'))
 
-library(lubridate)
-library(sqldf)
-library(IHA)
-library(zoo)
-library(data.table)
+#suppressPackageStartupMessageslibrary(lubridate))
+##library(sqldf)
+#library(IHA)
+#library(zoo)
+suppressPackageStartupMessages(library(data.table))
+
+ds <- RomDataSource$new(site, rest_uname)
+ds$get_token(rest_pw)
 
 # load lseg_functions
-site <- "http://deq1.bse.vt.edu:81/met/out/lseg_csv/1984010100-2020123123/" # temporary cloud url
-dir <- "/backup/meteorology/" # directory where met data is stored
+nldas_site <- paste0(omsite,"/met/out/lseg_csv") # temporary cloud url
+nldas_dir <- "/backup/meteorology/" # directory where met data is stored
+outdir=Sys.getenv(c('NLDAS_ROOT'))[1]
 #source(paste(github_location,"HARParchive/HARP-2021-2022","lseg_functions.R", sep = "/"))
 
 # load AllLandsegList
 #AllLandsegList <- scan(file = "https://raw.githubusercontent.com/HARPgroup/HARParchive/master/GIS_layers/p5_landsegments.txt", what = character())
-AllLandsegList <- scan(file = paste0(dir, "p5_landsegments.txt"), what = character())
 paste("loaded land segment list")
+
+argst <- commandArgs(trailingOnly = T)
+if (length(argst) > 0) {
+  landseg = argst[1]
+  message("ERROR: You must include the land segment, e.g. A51011")
+  exit
+}
+if (length(argst) > 1) {
+  dataset = argst[2]
+  message("ERROR: You must include the dataset, e.g. 19840101-20201231")
+  exit
+}
+if (length(argst) > 2) {
+  model_version_code = argst[3]
+} else {
+  model_version_code=Sys.getenv(c('MODEL_VERSION_CODE'))[1]
+}
+
+# Variable names
+om_con <- 'om_class_Constant'
+om_file <- 'external_file'
 
 # instantiate data frames and variables for loops
 i <- 1
-ErrorLsegs <- data.frame()
-ErrorYear <- data.frame()
-ErrorMonth <- data.frame()
-ErrorDay <- data.frame()
-ErrorHour <- data.frame()
-ErrorValue <- data.frame()
-paste("data frames instantiated")
-while(i<=length(AllLandsegList)){
-  
-  landseg <- AllLandsegList[i]
-  print(paste0("current landsegment: ", landseg))
 
-  # read in lseg_csv
-  #timeSeries <- fread(paste0(site,landseg,".PRC"))
-  # code with correct input directory if running on deq machine
-  timeSeries <- fread(paste0(dir, "out/lseg_csv/1984010100-2020123123/",landseg,".PRC"))
-  #timeSeries <- read.table(paste0(dir, "out/lseg_csv/1984010100-2020123123/",landseg,".PRC"), header = FALSE, sep = ",")
-  print(paste0(landseg," data read"))
+print(paste0("current landsegment: ", landseg))
 
-  # line of code to help run even with incomplete lseg_csv
-  timeSeries <- timeSeries[-nrow(timeSeries),]
-  
-  # loops iterates through to check for abnormally values 
-  j <- 1
-  while (j <= nrow(timeSeries)) {
-    
-    if (as.numeric(timeSeries$V5[j]) > 4.0) {
-      ErrorLsegs <- rbind(ErrorLsegs, paste0(landseg))
-      ErrorYear <- rbind(ErrorYear, paste0(timeSeries$V1[j]))
-      ErrorMonth <- rbind(ErrorMonth, paste0(timeSeries$V2[j]))
-      ErrorDay <- rbind(ErrorDay, paste0(timeSeries$V3[j]))
-      ErrorHour <- rbind(ErrorHour, paste0(timeSeries$V4[j]))
-      ErrorValue <- rbind(ErrorValue, paste0(timeSeries$V5[j]))
-      print(paste0(landseg, " has an abnormality value"))
-    }
-    j <- j + 1
-  }
-  print(paste0(landseg, " abnormallity values checked"))
-  i <- i+ 1
+# read in a model container
+lseg_feature <- RomFeature$new(
+  ds, list(
+    ftype = landseg_ftype,
+    hydrocode = landseg
+  ),
+  TRUE
+)
+if (!(lseg_feature$hydroid > 0)) {
+  message(paste("Could not find", landseg))
+  next
+}
+lseg_model <- RomProperty$new(
+  ds, list(
+    featureid = lseg_feature$hydroid,
+    propcode = model_version_code,
+    propname = paste(lseg_feature$name, model_version_code),
+    varkey = 'om_model_element',
+    entity_type = 'dh_feature'
+  ),
+  TRUE
+)
+if (is.na(lseg_model$pid)) {
+  message(paste("Could not find mode for", landseg, ", creating."))
+  lseg_model$save(TRUE)
+}
+nldas_datasets <- RomProperty$new(
+  ds, list(
+    featureid = lseg_model$pid,
+    propname = 'nldas_datasets',
+    entity_type = 'dh_properties'
+  ),
+  TRUE
+)
+if (is.na(nldas_datasets$pid)) {
+  message(paste("Could not find NLDAS datasets for", landseg, ", creating."))
+  nldas_datasets$save(TRUE)
+}
+nldas_data <- RomProperty$new(
+  ds, list(
+    featureid = nldas_datasets$pid,
+    propname = dataset,
+    entity_type = 'dh_properties'
+  ),
+  TRUE
+)
+if (is.na(nldas_data$pid)) {
+  message(paste("Could not find NLDAS", dataset, ", creating."))
+  nldas_data$save(TRUE)
 }
 
-# creates data framed of flagged values with corresponding time and land segment
-FlaggedData <- data.frame(ErrorYear, ErrorMonth, ErrorDay, ErrorHour, ErrorLsegs, ErrorValue)
-paste("Flagged data frame created")
+# read in lseg_csv
+ts_file_url <- paste0(nldas_site,"/",dataset,"/",landseg,".PRC")
+timeSeries <- fread(ts_file_url)
+# code with correct input directory if running on deq machine
+#timeSeries <- fread(paste0(dir, "out/lseg_csv/1984010100-2020123123/",landseg,".PRC"))
+print(paste0(landseg," data read"))
+data_file <- RomProperty$new(
+  ds,
+  list(
+    entity_type='dh_properties',propname='file',varkey=om_file,featureid=nldas_data$pid
+  ),
+  TRUE
+)
+data_file$propcode <- ts_file_url
+data_file$save(TRUE)
 
-# create and save error landsegment file as txt
-#write.table(FlaggedData,"C:/Users/kylew/Documents/R/HARPSpring2021/NLDAS-2/p5FlaggedLsegsPRC.txt", 
-#            row.names = FALSE, col.names = FALSE)
-# code to write it to /backup/meteorology directory if we ever decide to
-write.table(FlaggedData,paste0(dir, "p5FlaggedLsegsPRC.txt"), 
-           row.names = FALSE, col.names = FALSE, sep = ",")
-paste("Data written to table")
+# line of code to help run even with incomplete lseg_csv
+#timeSeries <- timeSeries[-nrow(timeSeries),]
+
+# loops iterates through to check for abnormally values 
+j <- 1
+allcount <- sqldf("select count(*) as num_anom from timeSeries")
+pcount <- sqldf("select count(*) as num_anom from timeSeries where V5 > 4.0")
+
+print(paste0(landseg, allcount, "values checked"))
+
+data_status <- RomProperty$new(
+  ds,
+  list(entity_type='dh_properties',propname='status',varkey=om_con,featureid=nldas_data$pid),
+  TRUE
+)
+# flag as bad if there are anomalous values, or no values
+if ( (pcount > 0) || (allcount == 0)) {
+  data_status$propvalue <- 0
+} else {
+  data_status$propvalue <- 1
+}
+data_status$save(TRUE)
+data_flagged <- RomProperty$new(
+  ds,
+  list(entity_type='dh_properties',propname='anomaly_count',varkey=om_con,featureid=nldas_data$pid),
+  TRUE
+)
+data_flagged$propvalue <- as.integer(pcount)
+data_flagged$save(TRUE)
+
+data_count <- RomProperty$new(
+  ds,
+  list(entity_type='dh_properties',propname='record_count',varkey=om_con,featureid=nldas_data$pid),
+  TRUE
+)
+data_count$propvalue <- as.integer(allcount)
+data_count$save(TRUE)

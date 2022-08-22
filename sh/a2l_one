@@ -14,6 +14,9 @@ eMonth=$(echo $eDate | cut -c5-6)
 eDay=$(echo $eDate | cut -c7-8)
 eHour=$(echo $eDate | cut -c9-10)
 
+if [ ! -d "$outdir/$sDate-$eDate" ]; then 
+  mkdir "$outdir/$sDate-$eDate" 
+fi
 
 # get the grid cells for the requested land unit
 fname="/tmp/$landname.g2l"
@@ -21,5 +24,6 @@ fname="/tmp/$landname.g2l"
 echo "1" > $fname
 # put grid data into the file - use first one found in seg_maps
 fgrep -h $landname seg_maps/* | head -n 1 >> $fname
+echo "NLDAS2_ASCII_to_LSegs $indir $outdir $sYear $sMonth $sDay $sHour $eYear $eMonth $eDay $eHour $fname"
 NLDAS2_ASCII_to_LSegs $indir $outdir $sYear $sMonth $sDay $sHour $eYear $eMonth $eDay $eHour $fname
 
