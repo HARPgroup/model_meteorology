@@ -3,7 +3,7 @@
 landname=$1
 # removes the land segment from the first position
 # yields a param pair list in format x371y99
-met_land_cells=`nldas_land_grids $landname`
+met_land_cells=`./nldas_land_grids $landname`
 
 # use a // to escape x I think
 met_land_cells=${met_land_cells//x/}

@@ -4,5 +4,5 @@
 landname=$1
 
 # get the grid cells for the requested land unit
-land_cfg=`fgrep -h $landname seg_maps/* | head -n 1`
+land_cfg=`fgrep -h $landname /backup/meteorology/seg_maps/* | head -n 1`
 echo $land_cfg

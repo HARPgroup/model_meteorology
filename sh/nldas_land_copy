@@ -1,0 +1,14 @@
+#!/bin/bash
+# call get_land_grid_cells $met_land_cells
+echo "This is NOT a permanent fix for a missing land seg.  It is a temporary stop gap"
+echo "You need to create a proper map of cells to the land seg of interest and add it manually in seg_maps"
+src_landname=$1
+dest_landname=$2
+dest_landfile="${2}.txt"
+# removes the land segment from the first position
+# yields a param pair list in format x371y99
+met_land_cells=`./nldas_land_grids $src_landname`
+echo 1 > /tmp/$dest_landname
+echo "$dest_landname	$met_land_cells" >> /tmp/$dest_landname
+mv /tmp/$dest_landname seg_maps/$dest_landfile
+echo "Created seg_maps/$dest_landfile with values $met_land_cells"

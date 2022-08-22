@@ -1,0 +1,37 @@
+#!/bin/bash
+sDate=$1
+eDate=$2
+indir=$3
+outdir=$4
+landname=$5
+# splitting up dates into components
+sYear=$(echo $sDate | cut -c1-4)
+sMonth=$(echo $sDate | cut -c5-6)
+sDay=$(echo $sDate | cut -c7-8)
+sHour=$(echo $sDate | cut -c9-10)
+eYear=$(echo $eDate | cut -c1-4)
+eMonth=$(echo $eDate | cut -c5-6)
+eDay=$(echo $eDate | cut -c7-8)
+eHour=$(echo $eDate | cut -c9-10)
+
+if [ ! -d "$outdir/$sDate-$eDate" ]; then 
+  mkdir "$outdir/$sDate-$eDate" 
+fi
+
+mkdir /tmp/test_$landname
+cfg=`./nldas_land_grids $landname` 
+echo "Found: $cfg"
+n=0
+for i in $cfg; do
+  n=$((n+1)) 
+  echo "Handling entry $n: $i"
+  if [ "$n" == "1" ]; then 
+    continue 
+  fi
+  fname="/tmp/test_$landname/$i.g2l"
+  echo "1" > $fname
+  echo "$i 1 $i" >> $fname
+  echo "NLDAS2_ASCII_to_LSegs $indir $outdir $sYear $sMonth $sDay $sHour $eYear $eMonth $eDay $eHour $fname"
+  NLDAS2_ASCII_to_LSegs $indir $outdir $sYear $sMonth $sDay $sHour $eYear $eMonth $eDay $eHour $fname
+done
+
