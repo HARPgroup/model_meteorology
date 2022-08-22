@@ -25,26 +25,17 @@ nldas_dir <- "/backup/meteorology/" # directory where met data is stored
 outdir=Sys.getenv(c('NLDAS_ROOT'))[1]
 #source(paste(github_location,"HARParchive/HARP-2021-2022","lseg_functions.R", sep = "/"))
 
-# load AllLandsegList
-#AllLandsegList <- scan(file = "https://raw.githubusercontent.com/HARPgroup/HARParchive/master/GIS_layers/p5_landsegments.txt", what = character())
-paste("loaded land segment list")
-
 argst <- commandArgs(trailingOnly = T)
-if (length(argst) > 0) {
-  landseg = argst[1]
-  message("ERROR: You must include the land segment, e.g. A51011")
+if (length(argst) < 4) {
+  message("Use: Rscript lseg_qa_test_timeseries.R landseg dataset landseg_ftype model_version_code ")
+  message("Ex: Rscript lseg_qa_test_timeseries.R A51011 1984010100-2020123123 cbp532_landseg cbp-5.3.2 ")
   exit
 }
-if (length(argst) > 1) {
-  dataset = argst[2]
-  message("ERROR: You must include the dataset, e.g. 19840101-20201231")
-  exit
-}
-if (length(argst) > 2) {
-  model_version_code = argst[3]
-} else {
-  model_version_code=Sys.getenv(c('MODEL_VERSION_CODE'))[1]
-}
+
+landseg = argst[1]
+dataset = argst[2]
+landseg_ftype = argst[3]
+model_version_code = argst[4]
 
 # Variable names
 om_con <- 'om_class_Constant'
@@ -59,6 +50,7 @@ print(paste0("current landsegment: ", landseg))
 lseg_feature <- RomFeature$new(
   ds, list(
     ftype = landseg_ftype,
+    bundle = 'landunit',
     hydrocode = landseg
   ),
   TRUE
@@ -146,7 +138,7 @@ if ( (pcount > 0) || (allcount == 0)) {
 data_status$save(TRUE)
 data_flagged <- RomProperty$new(
   ds,
-  list(entity_type='dh_properties',propname='anomaly_count',varkey=om_con,featureid=nldas_data$pid),
+  list(entity_type='dh_properties',propname='PRC_anomaly_count',varkey=om_con,featureid=nldas_data$pid),
   TRUE
 )
 data_flagged$propvalue <- as.integer(pcount)
