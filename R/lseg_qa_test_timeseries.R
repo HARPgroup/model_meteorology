@@ -29,7 +29,7 @@ argst <- commandArgs(trailingOnly = T)
 if (length(argst) < 4) {
   message("Use: Rscript lseg_qa_test_timeseries.R landseg dataset landseg_ftype model_version_code ")
   message("Ex: Rscript lseg_qa_test_timeseries.R A51011 1984010100-2020123123 cbp532_landseg cbp-5.3.2 ")
-  exit
+  quit()
 }
 
 landseg = argst[1]
@@ -101,6 +101,7 @@ if (is.na(nldas_data$pid)) {
 # read in lseg_csv
 ts_file_url <- paste0(nldas_site,"/",dataset,"/",landseg,".PRC")
 timeSeries <- fread(ts_file_url)
+names(timeSeries) <- c('year','month','day','hour','tsvalue')
 # code with correct input directory if running on deq machine
 #timeSeries <- fread(paste0(dir, "out/lseg_csv/1984010100-2020123123/",landseg,".PRC"))
 print(paste0(landseg," data read"))
@@ -120,7 +121,17 @@ data_file$save(TRUE)
 # loops iterates through to check for abnormally values 
 j <- 1
 allcount <- sqldf("select count(*) as num_anom from timeSeries")
-pcount <- sqldf("select count(*) as num_anom from timeSeries where V5 > 4.0")
+hecount <- sqldf("select count(*) as num_anom from timeSeries where tsvalue > 4.0")
+decount <- sqldf(
+  "select count(*) as num_anom 
+   from (
+     select year, month, day, sum(tsvalue) as tsvalue
+     from timeSeries 
+     group by year, month, day
+   ) as ts
+   where tsvalue > 20.0"
+)
+pcount <- sqldf("select count(*) as num_anom from timeSeries where tsvalue > 1.0")
 
 print(paste0(landseg, allcount, "values checked"))
 
@@ -130,7 +141,7 @@ data_status <- RomProperty$new(
   TRUE
 )
 # flag as bad if there are anomalous values, or no values
-if ( (pcount > 0) || (allcount == 0)) {
+if ( (hecount > 0) || (decount > 0) || (allcount == 0)) {
   data_status$propvalue <- 0
 } else {
   data_status$propvalue <- 1
@@ -151,3 +162,19 @@ data_count <- RomProperty$new(
 )
 data_count$propvalue <- as.integer(allcount)
 data_count$save(TRUE)
+
+de_count <- RomProperty$new(
+  ds,
+  list(entity_type='dh_properties',propname='PRC_daily_error_count',varkey=om_con,featureid=nldas_data$pid),
+  TRUE
+)
+de_count$propvalue <- as.integer(decount)
+de_count$save(TRUE)
+
+he_count <- RomProperty$new(
+  ds,
+  list(entity_type='dh_properties',propname='PRC_hourly_error_count',varkey=om_con,featureid=nldas_data$pid),
+  TRUE
+)
+he_count$propvalue <- as.integer(hecount)
+he_count$save(TRUE)
