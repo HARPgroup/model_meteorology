@@ -4,6 +4,8 @@ eDate=$2
 indir=$3
 outdir=$4
 landname=$5
+# load directories
+. hspf_config
 # splitting up dates into components
 sYear=$(echo $sDate | cut -c1-4)
 sMonth=$(echo $sDate | cut -c5-6)
@@ -23,7 +25,7 @@ fname="/tmp/$landname.g2l"
 # create a file with instruction to handle only 1 line
 echo "1" > $fname
 # put grid data into the file - use first one found in seg_maps
-fgrep -h $landname seg_maps/* | head -n 1 >> $fname
+fgrep -h $NLDAS_ROOT/$landname seg_maps/* | head -n 1 >> $fname
 echo "NLDAS2_ASCII_to_LSegs $indir $outdir $sYear $sMonth $sDay $sHour $eYear $eMonth $eDay $eHour $fname"
 NLDAS2_ASCII_to_LSegs $indir $outdir $sYear $sMonth $sDay $sHour $eYear $eMonth $eDay $eHour $fname
 
