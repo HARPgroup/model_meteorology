@@ -32,12 +32,18 @@ met_land_cells=${met_land_cells//x/}
 # replace y with aspace use a // to escape y I think
 met_land_cells=${met_land_cells//y/ }
 
+# @todo: use the date function to see if we can tell which cells 
+#        have already been processed, and then omit them 
+# get the modified timestamp of the target file ion seconds since the epoch
+# date -r $gdir/$cell "+%s"
+
+
 cYear=$sYear
 complete=0
 while [ $complete != 1 ]; do
  if [ $cYear -le $eYear ]; then
-    echo "NLDAS2_GRIB_to_ASCII $gDir $oDir $cYear 01 01 00 $cYear 12 31 23 $met_land_cells"
-    NLDAS2_GRIB_to_ASCII $gDir $oDir $cYear 01 01 00 $cYear 12 31 23 $met_land_cells
+    echo "NLDAS2_GRIB_to_ASCII $gDir $oDir $sYear $sMonth $sDay 00 $eYear $eMonth $eDay 23 $met_land_cells"
+    NLDAS2_GRIB_to_ASCII $gDir $oDir $sYear $sMonth $sDay 00 $eYear $eMonth $eDay 23 $met_land_cells
   else
     complete=1
   fi
