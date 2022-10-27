@@ -60,11 +60,11 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 **********start and end dates for entire timeseries*********************
       sdate(1) = ICHAR(sdatestr(1:4))
       if (LEN(sdatestr).ge.6) then 
-        sdate(2) = ICHAR(sdatestr(5:6))
+        read (unit=(sdatestr(5:6)),fmt=*) sdate(2)
       else
         sdate(2) = 1
       end if
-      if (LEN(sdatestr).ge.6) then 
+      if (LEN(sdatestr).ge.8) then 
         sdate(3) = ICHAR(sdatestr(7:8))
       else
         sdate(3) = 1
@@ -79,7 +79,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       else
         edate(2) = 1
       end if
-      if (LEN(edatestr).ge.6) then 
+      if (LEN(edatestr).ge.8) then 
         edate(3) = ICHAR(edatestr(7:8))
       else
         edate(3) = 1
