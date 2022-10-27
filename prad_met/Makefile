@@ -32,7 +32,7 @@ $(PROG1): $(OBJS)
 
 libs: 
 	$(FC) -fbounds-check -c date_utils.f
-  ar $(ArOpt) $@ $?
+	ar $(ArOpt) $@ $?
   
 one: wdm_insert_one.o
 	$(FC) -fbounds-check -c date_utils.f
