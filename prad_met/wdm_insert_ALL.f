@@ -1087,6 +1087,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       goto 999
 
 999   continue
+      end
 
       CONTAINS
       
@@ -1119,4 +1120,3 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
           return
         end
 
-    END
