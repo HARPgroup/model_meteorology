@@ -14,6 +14,7 @@ C     FILE AND INPUT NAMES
       character     longline*300
       character     sdatestr*8
       character     edatestr*8
+      character     dpart*4
       integer last
 C     SIZE OF INPUT NAMES
       integer lendatasource, lenversion, lenperiod, lenlseg
@@ -60,7 +61,8 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 **********start and end dates for entire timeseries*********************
       sdate(1) = ICHAR(sdatestr(1:4))
       if (LEN(sdatestr).ge.6) then 
-        read ((sdatestr(5:6)),fmt='(I4)') sdate(2)
+        dpart = (sdatestr(5:6))
+        read (dpart,fmt='(I4)') sdate(2)
       else
         sdate(2) = 1
       end if
