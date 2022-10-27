@@ -26,7 +26,8 @@ ArOpt = rv
 # target: prerequisites 
 #   commands 
 
-all: libs $(PROG1) one
+#all: libs $(PROG1) one
+all: libs one
 
 $(PROG1): $(OBJS)
 	$(FC) $(LDFLAGS) -o wdm_insert_ALL $(OBJS) $(LIBS)
