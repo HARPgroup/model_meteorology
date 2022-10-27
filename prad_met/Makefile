@@ -38,7 +38,6 @@ date_utils.a:
 	ar $(ArOpt) $@ $?
   
 one: wdm_insert_one.o
-	$(FC) -fbounds-check -c date_utils.f
 	$(FC) $(LDFLAGS) -o wdm_insert_one wdm_insert_one.o $(LIBS)
 
 install:
