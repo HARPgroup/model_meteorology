@@ -24,13 +24,16 @@ LDFLAGS =
 # target: prerequisites 
 #   commands 
 
-all: $(PROG1) one
+all: libs $(PROG1) one
 
 $(PROG1): $(OBJS)
 	$(FC) $(LDFLAGS) -o wdm_insert_ALL $(OBJS) $(LIBS)
 
+libs: 
+	$(FC) -fbounds-check -c date_utils.f
+  
 one: wdm_insert_one.o
-  $(FC) -fbounds-check -c date_utils.f
+	$(FC) -fbounds-check -c date_utils.f
 	$(FC) $(LDFLAGS) -o wdm_insert_one wdm_insert_one.o $(LIBS)
 
 install:
