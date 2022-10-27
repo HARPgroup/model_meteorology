@@ -5,9 +5,10 @@
 
         subroutine n2date(datestr,defdate,outdate)
                           
-          character datestr*8
-          integer defdate(6)
-          integer outdate(6)
+          character     datestr*8
+          character     dpart*4
+          integer       defdate(6)
+          integer       outdate(6)
           dpart = datestr(1:4)
           read (dpart,fmt='(I4)') outdate(1)
           if (LEN(datestr).ge.6) then 
