@@ -1094,21 +1094,21 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 ***** increments one hour                                             **
 ************************************************************************
 
-      subroutine i2date(indatestr,idefdate,
+      subroutine i2date(datestr,idefdate,
                         ioutdate)
-        character indatestr*8
+        character datestr*8
         integer idefdate(6)
         integer ioutdate(6)
-        dpart = indatestr(1:4)
+        dpart = datestr(1:4)
         read (dpart,fmt='(I4)') ioutdate(1)
-        if (LEN(indatestr).ge.6) then 
-          dpart = (indatestr(5:6))
+        if (LEN(datestr).ge.6) then 
+          dpart = (datestr(5:6))
           read (dpart,fmt='(I4)') ioutdate(2)
         else
           ioutdate(2) = idefdate(2)
         end if
-        if (LEN(indatestr).ge.8) then 
-          dpart = (indatestr(7:8))
+        if (LEN(datestr).ge.8) then 
+          dpart = (datestr(7:8))
           read (dpart,fmt='(I4)') ioutdate(3)
         else
           ioutdate(3) = idefdate(3)
