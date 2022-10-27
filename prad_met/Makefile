@@ -36,7 +36,7 @@ libs: date_utils.a
 
 date_utils.a:	
 	$(FC) -fbounds-check -c date_utils.f
-	ar $(ArOpt) date_utils.a
+	ar $(ArOpt) date_utils.a date_utils.o
   
 one: wdm_insert_one.o
 	$(FC) $(LDFLAGS) -o wdm_insert_one wdm_insert_one.o $(LIBS)
