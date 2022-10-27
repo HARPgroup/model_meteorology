@@ -1117,7 +1117,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
           ioutdate(4) = 0
           ioutdate(5) = 0
           ioutdate(6) = 0
-          
+          return
         end
 
 END PROGRAM main 
