@@ -1088,7 +1088,6 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 
 999   continue
 
-      end
 
 ************************************************************************
 ***** converts date string to into array                              **
@@ -1122,4 +1121,6 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
         
         return
       
+      end
+
       end
