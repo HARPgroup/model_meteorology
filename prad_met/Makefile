@@ -27,7 +27,7 @@ ArOpt = rv
 #   commands 
 
 #all: libs $(PROG1) one
-all: libs one
+all: libs one any 
 
 $(PROG1): $(OBJS)
 	$(FC) $(LDFLAGS) -o wdm_insert_ALL $(OBJS) $(LIBS)
@@ -40,6 +40,10 @@ date_utils.a:
   
 one: wdm_insert_one.o
 	$(FC) $(LDFLAGS) -o wdm_insert_one wdm_insert_one.o $(LIBS)
+  
+# we call this any because "all" is a special word 
+any: wdm_insert_ALL.o
+	$(FC) $(LDFLAGS) -o wdm_insert_ALL wdm_insert_ALL.o $(LIBS)
 
 install:
 	mv wdm_insert_one $(BINDIR)/wdm_insert_one
