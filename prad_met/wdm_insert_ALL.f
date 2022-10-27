@@ -1038,7 +1038,9 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       call wdflcl(
      I            wdmfile,
      O            retcod)
-      if (retcod.ne.0) stop 'ERROR closing wdm'
+      if (retcod.ne.0) then 
+            print*, 'retcod = ', retcod
+            stop 'ERROR closing wdm'
       end if
 ************************************************************************
 ************************ ##### DCLC FINISH ##### ***********************
