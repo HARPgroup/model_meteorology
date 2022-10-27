@@ -19,6 +19,7 @@ FC = f77
 FFLAGS = -W -Wall -pedantic -Wsurprising -fbounds-check 
 #FFLAGS = -W -Wall -Wsurprising -pedantic    
 LDFLAGS =   
+ArOpt = rv
 
 # make file syntax is (note prerequisites are optional)
 # target: prerequisites 
@@ -31,6 +32,7 @@ $(PROG1): $(OBJS)
 
 libs: 
 	$(FC) -fbounds-check -c date_utils.f
+  ar $(ArOpt) $@ $?
   
 one: wdm_insert_one.o
 	$(FC) -fbounds-check -c date_utils.f
