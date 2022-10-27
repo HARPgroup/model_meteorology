@@ -1094,7 +1094,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 ***** converts date string to into array                              **
 ************************************************************************
 
-        subroutine i2date(datestr,idefdate,
+        subroutine n2date(datestr,idefdate,
                           ioutdate)
                           
           character datestr*8
