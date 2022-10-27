@@ -14,6 +14,7 @@ C     FILE AND INPUT NAMES
       character     longline*300
       character     sdatestr*8
       character     edatestr*8
+      integer defdate(6) 
       character     dpart*4
       integer last
 C     SIZE OF INPUT NAMES
@@ -59,7 +60,9 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       print*, lseg
       print*, "LSEG string length is ",lenlseg
 **********start and end dates for entire timeseries*********************
-      sdate(1) = ICHAR(sdatestr(1:4))
+      defdate = (/1984, 1,1,0,0,0 /)
+      dpart = sdatestr(1:4)
+      read (dpart,fmt='(I4)') sdate(1)
       if (LEN(sdatestr).ge.6) then 
         dpart = (sdatestr(5:6))
         read (dpart,fmt='(I4)') sdate(2)
@@ -67,7 +70,8 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
         sdate(2) = 1
       end if
       if (LEN(sdatestr).ge.8) then 
-        sdate(3) = ICHAR(sdatestr(7:8))
+        dpart = (sdatestr(7:8))
+        read (dpart,fmt='(I4)') sdate(3)
       else
         sdate(3) = 1
       end if
@@ -1086,3 +1090,31 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 
       end
 
+************************************************************************
+***** increments one hour                                             **
+************************************************************************
+
+      subroutine i2date(indatestr,idefdate,
+                        ioutdate)
+        character indatestr(8)
+        integer idefdate(6)
+        integer ioutdate(6)
+        dpart = indatestr(1:4)
+        read (dpart,fmt='(I4)') ioutdate(1)
+        if (LEN(indatestr).ge.6) then 
+          dpart = (indatestr(5:6))
+          read (dpart,fmt='(I4)') ioutdate(2)
+        else
+          ioutdate(2) = idefdate(2)
+        end if
+        if (LEN(indatestr).ge.8) then 
+          dpart = (indatestr(7:8))
+          read (dpart,fmt='(I4)') ioutdate(3)
+        else
+          ioutdate(3) = idefdate(3)
+        end if
+        ioutdate(4) = 0
+        ioutdate(5) = 0
+        ioutdate(6) = 0
+        
+      return
