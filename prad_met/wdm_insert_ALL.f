@@ -80,8 +80,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       sdate(6) = 0
 
       defdate = (/20200, 12,31,24,0,0 /)
-      call n2date(edatestr,defdate,
-                  edate)
+      call n2date(edatestr, defdate, edate)
 C      edate(1) = ICHAR(edatestr(1:4))
 C      if (LEN(edatestr).ge.6) then 
 C        edate(2) = ICHAR(edatestr(5:6))
