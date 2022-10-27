@@ -12,6 +12,8 @@ C     FILE AND INPUT NAMES
       character     csvfname*200
       character     datasource*100, version*100, period*100
       character     longline*300
+      character     sdatestr*8
+      character     edatestr*8
       integer last
 C     SIZE OF INPUT NAMES
       integer lendatasource, lenversion, lenperiod, lenlseg
@@ -47,7 +49,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       integer   YEAR1, YEAR2
       integer   HPRC, HTMP, HPET, HRAD, HWND, DDPT, DCLC
 ******************** END SPECIFICATIONS ********************************
-      read(*,*) lseg, datasource, version, period, YEAR1, YEAR2,
+      read(*,*) lseg, datasource, version, period, sdatestr, edatestr,
      .          HPRC, HTMP, HPET, HRAD, HWND, DDPT, DCLC
       call lencl(datasource,lendatasource)
       call lencl(version,lenversion)
@@ -56,14 +58,32 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       print*, lseg
       print*, "LSEG string length is ",lenlseg
 **********start and end dates for entire timeseries*********************
-      sdate(1) = YEAR1
-      sdate(2) = 1
-      sdate(3) = 1
+      sdate(1) = ICHAR(sdatestr(1:4))
+      if (LEN(sdatestr).ge.6) then 
+        sdate(2) = ICHAR(sdatestr(5:6))
+      else
+        sdate(2) = 1
+      end if
+      if (LEN(sdatestr).ge.6) then 
+        sdate(3) = ICHAR(sdatestr(7:8))
+      else
+        sdate(3) = 1
+      end if
       sdate(4) = 0
       sdate(5) = 0
       sdate(6) = 0
       
-      edate(1) = YEAR2
+      edate(1) = ICHAR(edatestr(1:4))
+      if (LEN(edatestr).ge.6) then 
+        edate(2) = ICHAR(edatestr(5:6))
+      else
+        edate(2) = 1
+      end if
+      if (LEN(edatestr).ge.6) then 
+        edate(3) = ICHAR(edatestr(7:8))
+      else
+        edate(3) = 1
+      end if
       edate(2) = 12
       edate(3) = 31
       edate(4) = 24
