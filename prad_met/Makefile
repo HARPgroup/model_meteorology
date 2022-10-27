@@ -30,7 +30,9 @@ all: libs $(PROG1) one
 $(PROG1): $(OBJS)
 	$(FC) $(LDFLAGS) -o wdm_insert_ALL $(OBJS) $(LIBS)
 
-libs: date_utils.o
+libs: date_utils.a
+
+date_utils.a:	
 	$(FC) -fbounds-check -c date_utils.f
 	ar $(ArOpt) $@ $?
   
