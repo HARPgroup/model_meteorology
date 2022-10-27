@@ -2,7 +2,7 @@
 ***   Program reads NLDAS-2 time series data and writes WDMs         ***
 ***   Author: Gopal Bhatt made major revisions on 02/05/15           ***
 ************************************************************************
-
+PROGRAM main
       implicit none
 C     ERROR CODES       
       integer err, retcod
@@ -1096,7 +1096,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 
         subroutine i2date(datestr,idefdate,
                           ioutdate)
-          implicit none
+                          
           character datestr*8
           integer idefdate(6)
           integer ioutdate(6)
@@ -1120,4 +1120,4 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
           
         end
 
-      end
+END PROGRAM main 
