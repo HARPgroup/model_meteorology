@@ -46,4 +46,5 @@ install:
 
 clean:
 	rm -f $(PROG1) $(OBJS)
-	rm -f wdm_insert_one wdm_insert_one.o
+	rm -f wdm_insert_one wdm_insert_one.o 
+	rm -f date_utils.a date_utils.o
