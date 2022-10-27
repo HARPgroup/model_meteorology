@@ -2,7 +2,7 @@
 ***   Program reads NLDAS-2 time series data and writes WDMs         ***
 ***   Author: Gopal Bhatt made major revisions on 02/05/15           ***
 ************************************************************************
-    PROGRAM 
+
       implicit none
 C     ERROR CODES       
       integer err, retcod
