@@ -14,6 +14,7 @@ LIBS =  ${CBP_SRC}/hspf/lib3.2/lib/utillib.a \
         ${CBP_SRC}/hspf/lib3.2/lib/wdmlib.a \
         ${CBP_SRC}/hspf/lib3.2/lib/adwdmlib.a \
         ${CBP_SRC}/lib/util_lib.a
+        date_utils.a
 
 FC = f77
 FFLAGS = -W -Wall -pedantic -Wsurprising -fbounds-check 
