@@ -1088,39 +1088,36 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 
 999   continue
 
-
+      CONTAINS
+      
 ************************************************************************
 ***** converts date string to into array                              **
 ************************************************************************
 
-      subroutine i2date(datestr,idefdate,
-                        ioutdate)
-        
-      implicit none
-      
-        character datestr*8
-        integer idefdate(6)
-        integer ioutdate(6)
-        dpart = datestr(1:4)
-        read (dpart,fmt='(I4)') ioutdate(1)
-        if (LEN(datestr).ge.6) then 
-          dpart = (datestr(5:6))
-          read (dpart,fmt='(I4)') ioutdate(2)
-        else
-          ioutdate(2) = idefdate(2)
-        end if
-        if (LEN(datestr).ge.8) then 
-          dpart = (datestr(7:8))
-          read (dpart,fmt='(I4)') ioutdate(3)
-        else
-          ioutdate(3) = idefdate(3)
-        end if
-        ioutdate(4) = 0
-        ioutdate(5) = 0
-        ioutdate(6) = 0
-        
-        return
-      
-      end
+        subroutine i2date(datestr,idefdate,
+                          ioutdate)
+          implicit none
+          character datestr*8
+          integer idefdate(6)
+          integer ioutdate(6)
+          dpart = datestr(1:4)
+          read (dpart,fmt='(I4)') ioutdate(1)
+          if (LEN(datestr).ge.6) then 
+            dpart = (datestr(5:6))
+            read (dpart,fmt='(I4)') ioutdate(2)
+          else
+            ioutdate(2) = idefdate(2)
+          end if
+          if (LEN(datestr).ge.8) then 
+            dpart = (datestr(7:8))
+            read (dpart,fmt='(I4)') ioutdate(3)
+          else
+            ioutdate(3) = idefdate(3)
+          end if
+          ioutdate(4) = 0
+          ioutdate(5) = 0
+          ioutdate(6) = 0
+          
+        end
 
       end
