@@ -14,8 +14,8 @@ C     FILE AND INPUT NAMES
       character     longline*300
       character     sdatestr*8
       character     edatestr*8
-      integer defdate(6) 
       character     dpart*4
+      integer defdate(6) 
       integer last
 C     SIZE OF INPUT NAMES
       integer lendatasource, lenversion, lenperiod, lenlseg
@@ -78,23 +78,26 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       sdate(4) = 0
       sdate(5) = 0
       sdate(6) = 0
-      
-      edate(1) = ICHAR(edatestr(1:4))
-      if (LEN(edatestr).ge.6) then 
-        edate(2) = ICHAR(edatestr(5:6))
-      else
-        edate(2) = 1
-      end if
-      if (LEN(edatestr).ge.8) then 
-        edate(3) = ICHAR(edatestr(7:8))
-      else
-        edate(3) = 1
-      end if
-      edate(2) = 12
-      edate(3) = 31
-      edate(4) = 24
-      edate(5) = 0
-      edate(6) = 0
+
+      defdate = (/20200, 12,31,24,0,0 /)
+      n2date(edatestr,defdate,
+             edate)
+C      edate(1) = ICHAR(edatestr(1:4))
+C      if (LEN(edatestr).ge.6) then 
+C        edate(2) = ICHAR(edatestr(5:6))
+C      else
+C        edate(2) = 1
+C      end if
+C      if (LEN(edatestr).ge.8) then 
+C        edate(3) = ICHAR(edatestr(7:8))
+C      else
+C        edate(3) = 1
+C      end if
+C      edate(2) = 12
+C      edate(3) = 31
+C      edate(4) = 24
+C      edate(5) = 0
+C      edate(6) = 0
 
 *********** Open WDM and Data file *************************************
       msgfname= './message.wdm'
