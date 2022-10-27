@@ -48,7 +48,6 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       integer   SunnyHrs
       integer   csvndata, nvals
       real      hmin,hmax,ymin,ymax
-      integer   YEAR1, YEAR2
       integer   HPRC, HTMP, HPET, HRAD, HWND, DDPT, DCLC
 ******************** END SPECIFICATIONS ********************************
       read(*,*) lseg, datasource, version, period, sdatestr, edatestr,
@@ -61,43 +60,13 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       print*, "LSEG string length is ",lenlseg
 **********start and end dates for entire timeseries*********************
       defdate = (/1984, 1,1,0,0,0 /)
-      dpart = sdatestr(1:4)
-      read (dpart,fmt='(I4)') sdate(1)
-      if (LEN(sdatestr).ge.6) then 
-        dpart = (sdatestr(5:6))
-        read (dpart,fmt='(I4)') sdate(2)
-      else
-        sdate(2) = 1
-      end if
-      if (LEN(sdatestr).ge.8) then 
-        dpart = (sdatestr(7:8))
-        read (dpart,fmt='(I4)') sdate(3)
-      else
-        sdate(3) = 1
-      end if
-      sdate(4) = 0
-      sdate(5) = 0
-      sdate(6) = 0
+      call n2date(sdatestr, defdate, sdate)
 
       defdate = (/20200, 12,31,24,0,0 /)
       call n2date(edatestr, defdate, edate)
-C      edate(1) = ICHAR(edatestr(1:4))
-C      if (LEN(edatestr).ge.6) then 
-C        edate(2) = ICHAR(edatestr(5:6))
-C      else
-C        edate(2) = 1
-C      end if
-C      if (LEN(edatestr).ge.8) then 
-C        edate(3) = ICHAR(edatestr(7:8))
-C      else
-C        edate(3) = 1
-C      end if
-C      edate(2) = 12
-C      edate(3) = 31
-C      edate(4) = 24
-C      edate(5) = 0
-C      edate(6) = 0
-
+      
+      print*, "Start import date ",sdate
+      print*, "End import date ",edate
 *********** Open WDM and Data file *************************************
       msgfname= './message.wdm'
       call wdbopn(msgfile,msgfname,1,retcod)  ! open msgfile read only
