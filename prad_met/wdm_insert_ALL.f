@@ -1096,7 +1096,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 
       subroutine i2date(indatestr,idefdate,
                         ioutdate)
-        character indatestr(8)
+        character indatestr*8
         integer idefdate(6)
         integer ioutdate(6)
         dpart = indatestr(1:4)
