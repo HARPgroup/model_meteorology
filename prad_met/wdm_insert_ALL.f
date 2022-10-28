@@ -12,6 +12,10 @@ C     FILE AND INPUT NAMES
       character     csvfname*200
       character     datasource*100, version*100, period*100
       character     longline*300
+      character     sdatestr*8
+      character     edatestr*8
+      character     dpart*4
+      integer defdate(6) 
       integer last
 C     SIZE OF INPUT NAMES
       integer lendatasource, lenversion, lenperiod, lenlseg
@@ -44,10 +48,9 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       integer   SunnyHrs
       integer   csvndata, nvals
       real      hmin,hmax,ymin,ymax
-      integer   YEAR1, YEAR2
       integer   HPRC, HTMP, HPET, HRAD, HWND, DDPT, DCLC
 ******************** END SPECIFICATIONS ********************************
-      read(*,*) lseg, datasource, version, period, YEAR1, YEAR2,
+      read(*,*) lseg, datasource, version, period, sdatestr, edatestr,
      .          HPRC, HTMP, HPET, HRAD, HWND, DDPT, DCLC
       call lencl(datasource,lendatasource)
       call lencl(version,lenversion)
@@ -56,20 +59,14 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       print*, lseg
       print*, "LSEG string length is ",lenlseg
 **********start and end dates for entire timeseries*********************
-      sdate(1) = YEAR1
-      sdate(2) = 1
-      sdate(3) = 1
-      sdate(4) = 0
-      sdate(5) = 0
-      sdate(6) = 0
-      
-      edate(1) = YEAR2
-      edate(2) = 12
-      edate(3) = 31
-      edate(4) = 24
-      edate(5) = 0
-      edate(6) = 0
+      defdate = (/1984, 1,1,0,0,0 /)
+      call n2date(sdatestr, defdate, sdate)
 
+      defdate = (/20200, 12,31,24,0,0 /)
+      call n2date(edatestr, defdate, edate)
+      
+      print*, "Start import date ",sdate
+      print*, "End import date ",edate
 *********** Open WDM and Data file *************************************
       msgfname= './message.wdm'
       call wdbopn(msgfile,msgfname,1,retcod)  ! open msgfile read only
@@ -1061,6 +1058,4 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       goto 999
 
 999   continue
-
       end
-
