@@ -132,6 +132,7 @@ generate_synthetic_timeseries <- function(lseg_csv, startdate1, enddate1, startd
   dfDPT <- lseg_csv$DPT
   
   # adding date column for date manipulation
+  message("Formatting individual MET components for synthesis")
   colnames(dfRAD) = c("year","month","day","hour","RAD")
   dfRAD$date <- as.Date(paste(dfRAD$year,dfRAD$month,dfRAD$day,sep="-"))
   
@@ -155,6 +156,7 @@ generate_synthetic_timeseries <- function(lseg_csv, startdate1, enddate1, startd
   year_diff = as.numeric(substring(enddate1, 1, 4)) - as.numeric(substring(startdate2, 1, 4))
   
   # filter by inputted date ranges
+  message("Isolating RAD obs")
   dfRAD1 <- sqldf(paste0("SELECT year, month, day, hour, RAD
                   FROM dfRAD
                   WHERE date between ", 
@@ -170,6 +172,7 @@ generate_synthetic_timeseries <- function(lseg_csv, startdate1, enddate1, startd
                          as.numeric(as.Date(enddate2)),
                          ""))
   
+  message("Isolating TMP obs")
   dfTMP1 <- sqldf(paste0("SELECT year, month, day, hour, TMP
                   FROM dfTMP
                   WHERE date between ", 
@@ -185,6 +188,8 @@ generate_synthetic_timeseries <- function(lseg_csv, startdate1, enddate1, startd
                          as.numeric(as.Date(enddate2)),
                          ""))
   
+  message("Isolating PET obs")
+  print(names(dfPET))
   dfPET1 <- sqldf(paste0("SELECT year, month, day, hour, PET
                   FROM dfPET
                   WHERE date between ", 
