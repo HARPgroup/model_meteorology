@@ -14,10 +14,11 @@ if (length(argst) < 5) {
 library(lubridate)
 library(sqldf)
 library(data.table)
+# load synthetic_met_functions todo: make a package
+source("https://raw.githubusercontent.com/HARPgroup/model_meteorology/main/R/synthetic_met_functions.R")
 
 # defaults
 out_dir="/backup/meteorology/out/lseg_csv/mash/"
-site <- "http://deq1.bse.vt.edu:81/met/out/lseg_csv/1984010100-2022123123/" # temporary cloud url
 def_year=year(now()) - 1
 in_dir <- paste0("/backup/meteorology/out/lseg_csv/1984010100-",def_year,"123123/") # linux directory
 
@@ -48,11 +49,8 @@ if (length(argst) >= 7) {
 # apply coefficients
 #
 
-# load synthetic_met_functions
-source("https://raw.githubusercontent.com/HARPgroup/HARParchive/master/HARP-2021-2022/synthetic_met_functions.R")
-
 # run get_lseg_csv to get download met data for range including mashup dates
-lseg_csv <- get_lseg_csv(landseg = landseg, startdate = startdate1, enddate = enddate1, site = site, dir = in_dir)
+lseg_csv <- get_lseg_csv(landseg = landseg, startdate = startdate1, enddate = enddate1, data_path = in_dir)
 
 # run generate_synthetic_timeseries to append two time periods together
 mash_up <- generate_synthetic_timeseries(lseg_csv = lseg_csv, startdate1 = startdate1, enddate1 = enddate1, startdate2 = startdate2, enddate2 = enddate2)

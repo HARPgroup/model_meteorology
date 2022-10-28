@@ -17,12 +17,12 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
   
   # downloading entire timeseries data
   # using web directory or linux terminal directory
-  dfRAD <- fread(paste0(data_path,"/",landseg, ".RAD"))
-  dfTMP <- fread(paste0(data_path,"/",landseg, ".TMP"))
-  dfPET <- fread(paste0(data_path,"/",landseg, ".PET"))
-  dfPRC <- fread(paste0(data_path,"/",landseg, ".PRC"))
-  dfWND <- fread(paste0(data_path,"/",landseg, ".WND"))
-  dfDPT <- fread(paste0(data_path,"/",landseg, ".DPT"))
+  dfRAD <- data.table::fread(paste0(data_path,"/",landseg, ".RAD"))
+  dfTMP <- data.table::fread(paste0(data_path,"/",landseg, ".TMP"))
+  dfPET <- data.table::fread(paste0(data_path,"/",landseg, ".PET"))
+  dfPRC <- data.table::fread(paste0(data_path,"/",landseg, ".PRC"))
+  dfWND <- data.table::fread(paste0(data_path,"/",landseg, ".WND"))
+  dfDPT <- data.table::fread(paste0(data_path,"/",landseg, ".DPT"))
   
   # adding date column for date manipulation
   colnames(dfRAD) = c("year","month","day","hour","RAD")
