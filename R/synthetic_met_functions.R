@@ -101,7 +101,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
                         as.numeric(as.Date(enddate)),
                         ""))
   
-  
+  message("Merging all met components")
   # return new time series as list
   dfALL <- list(
     "RAD" = dfRAD,
@@ -111,6 +111,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
     "WND" = dfWND,
     "DPT" = dfDPT)
   
+  message("Returning merged met.")
   return(dfALL)
   
 }
