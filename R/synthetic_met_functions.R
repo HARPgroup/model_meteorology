@@ -17,6 +17,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
   
   # downloading entire timeseries data
   # using web directory or linux terminal directory
+  message("Reading observed met data")
   dfRAD <- data.table::fread(paste0(data_path,"/",landseg, ".RAD"))
   dfTMP <- data.table::fread(paste0(data_path,"/",landseg, ".TMP"))
   dfPET <- data.table::fread(paste0(data_path,"/",landseg, ".PET"))
@@ -24,6 +25,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
   dfWND <- data.table::fread(paste0(data_path,"/",landseg, ".WND"))
   dfDPT <- data.table::fread(paste0(data_path,"/",landseg, ".DPT"))
   
+  message("Data read. Formatting columns.")
   # adding date column for date manipulation
   colnames(dfRAD) = c("year","month","day","hour","RAD")
   dfRAD$date <- as.Date(paste(dfRAD$year,dfRAD$month,dfRAD$day,sep="-"))
@@ -45,6 +47,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
   
   
   # filter by inputted date range
+  message(paste("Clipping RAD to", startdate, enddate))
   dfRAD <- sqldf(paste0("SELECT year, month, day, hour, RAD
                   FROM dfRAD
                   WHERE date between ", 
@@ -53,6 +56,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
                         as.numeric(as.Date(enddate)),
                         ""))
   
+  message(paste("Clipping TMP to", startdate, enddate))
   dfTMP <- sqldf(paste0("SELECT year, month, day, hour, TMP
                   FROM dfTMP
                   WHERE date between ", 
@@ -61,6 +65,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
                         as.numeric(as.Date(enddate)),
                         ""))
   
+  message(paste("Clipping PET to", startdate, enddate))
   dfPET <- sqldf(paste0("SELECT year, month, day, hour, PET
                   FROM dfPET
                   WHERE date between ", 
@@ -69,6 +74,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
                         as.numeric(as.Date(enddate)),
                         ""))
   
+  message(paste("Clipping PRC to", startdate, enddate))
   dfPRC <- sqldf(paste0("SELECT year, month, day, hour, PRC
                   FROM dfPRC
                   WHERE date between ", 
@@ -77,6 +83,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
                         as.numeric(as.Date(enddate)),
                         ""))
   
+  message(paste("Clipping WND to", startdate, enddate))
   dfWND <- sqldf(paste0("SELECT year, month, day, hour, WND
                   FROM dfWND
                   WHERE date between ", 
@@ -85,6 +92,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
                         as.numeric(as.Date(enddate)),
                         ""))
   
+  message(paste("Clipping DPT to", startdate, enddate))
   dfDPT <- sqldf(paste0("SELECT year, month, day, hour, DPT
                   FROM dfDPT
                   WHERE date between ", 
