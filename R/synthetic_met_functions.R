@@ -189,7 +189,6 @@ generate_synthetic_timeseries <- function(lseg_csv, startdate1, enddate1, startd
                          ""))
   
   message("Isolating PET obs")
-  print(names(dfPET))
   dfPET1 <- sqldf(paste0("SELECT year, month, day, hour, PET
                   FROM dfPET
                   WHERE date between ", 
@@ -205,6 +204,7 @@ generate_synthetic_timeseries <- function(lseg_csv, startdate1, enddate1, startd
                          as.numeric(as.Date(enddate2)),
                          ""))
 
+  message("Isolating PRC obs")
   dfPRC1 <- sqldf(paste0("SELECT year, month, day, hour, PRC
                   FROM dfPRC
                   WHERE date between ", 
@@ -221,6 +221,7 @@ generate_synthetic_timeseries <- function(lseg_csv, startdate1, enddate1, startd
                          ""))
 
   
+  message("Isolating WND obs")
   dfWND1 <- sqldf(paste0("SELECT year, month, day, hour, WND
                   FROM dfWND
                   WHERE date between ", 

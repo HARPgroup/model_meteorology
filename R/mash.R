@@ -55,49 +55,15 @@ lseg_csv <- get_lseg_csv(landseg = landseg, startdate = startdate1, enddate = en
 # run generate_synthetic_timeseries to append two time periods together
 mash_up <- generate_synthetic_timeseries(lseg_csv = lseg_csv, startdate1 = startdate1, enddate1 = enddate1, startdate2 = startdate2, enddate2 = enddate2)
 
-#
-#as.data.frame
-lseg_df <- as.data.frame(lseg_csv$PET)
-mash_df <- as.data.frame(mash_up$PET)
-mash_pdf <- as.data.frame(mash_up$PET)
-mash_yrmo_prc <- sqldf(
-  "
-    select year, month, sum(PRC) from mash_df
-    group by year, month
-  "
-)
-lseg_yrmo_prc <- sqldf(
-  "
-    select year, month, sum(PRC) from lseg_df
-    group by year, month
-  "
-)
-
-# generate plot
-plot(as.Date(paste(mash_up$TMP$year,mash_up$TMP$month, mash_up$TMP$day,sep="-")), mash_up$TMP$TMP, type = "l")
-plot(
-  as.Date(paste(mash_up$PRC$year,mash_up$PRC$month, mash_up$PRC$day,sep="-")), 
-  mash_up$PRC$PRC, 
-  type = "l", 
-  main = "Mashup 2019-2022 + 2002",
-  xlab = "Year",
-  ylab = "Monthly Total Precipitation (inches)"
-)
-
-# generate plot
-plot(as.Date(paste(mash_up$TMP$year,mash_up$TMP$month, mash_up$TMP$day,sep="-")), mash_up$TMP$TMP, type = "l")
-plot(
-  as.Date(paste(mash_up$PRC$year,mash_up$PRC$month, mash_up$PRC$day,sep="-")), 
-  mash_up$PRC$PRC, 
-  type = "l", 
-  main = "Mashup 2019-2022 + 2002",
-  xlab = "Year",
-  ylab = "Daily Total Precipitation (inches)"
-)
-
+message(paste("Write PRC to",paste0(out_dir,landseg,".PRC")))
 write.table(mash_up$PRC,paste0(out_dir,landseg,".PRC"),col.names=FALSE,row.names=FALSE,sep=",")
+message(paste("Write PET to",paste0(out_dir,landseg,".PET")))
 write.table(mash_up$PET,paste0(out_dir,landseg,".PET"),col.names=FALSE,row.names=FALSE,sep=",")
+message(paste("Write TMP to",paste0(out_dir,landseg,".TMP")))
 write.table(mash_up$TMP,paste0(out_dir,landseg,".TMP"),col.names=FALSE,row.names=FALSE,sep=",")
+message(paste("Write RAD to",paste0(out_dir,landseg,".RAD")))
 write.table(mash_up$RAD,paste0(out_dir,landseg,".RAD"),col.names=FALSE,row.names=FALSE,sep=",")
+message(paste("Write DPT to",paste0(out_dir,landseg,".DPT")))
 write.table(mash_up$DPT,paste0(out_dir,landseg,".DPT"),col.names=FALSE,row.names=FALSE,sep=",")
+message(paste("Write WND to",paste0(out_dir,landseg,".WND")))
 write.table(mash_up$WND,paste0(out_dir,landseg,".WND"),col.names=FALSE,row.names=FALSE,sep=",")
