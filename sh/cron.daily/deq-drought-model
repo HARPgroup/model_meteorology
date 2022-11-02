@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd /backup/meteorology
+yr=`date +%Y`
+sudo -u rob ./get_nldas_to_date $yr

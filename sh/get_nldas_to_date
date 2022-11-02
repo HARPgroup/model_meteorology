@@ -11,6 +11,10 @@ day_till=`date +%j`
 if [ $# -gt 1 ]; then
   day_till=$2
 fi
+force=0
+if [ $# -gt 2 ]; then
+  force=$3
+fi
 
 echo "Trying to retrieve NLDAS data up till day $day_till of year $yr"
 
@@ -24,6 +28,12 @@ fi
 
 last_day=`ls $yr/ | sort -nr | head -n1`
 last_day=$(($last_day + 1))
+# if we are given a day < last obtained and forced to overwrite existing data
+if [ $force -eq 1 ]; then
+  if [ $last_day > $day_till ]; then
+    last_day=$day_till
+  fi
+fi
 
 while [ $last_day -le $day_till ]; do
   f_day=`printf "%03d" $last_day`
