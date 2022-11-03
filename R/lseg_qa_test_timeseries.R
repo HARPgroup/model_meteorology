@@ -20,7 +20,8 @@ ds <- RomDataSource$new(site, rest_uname)
 ds$get_token(rest_pw)
 
 # load lseg_functions
-nldas_site <- paste0(omsite,"/met/out/lseg_csv") # temporary cloud url
+nldas_url_path = "/met/out/lseg_csv"
+nldas_site <- paste0(omsite,nldas_url_path) # temporary cloud url
 nldas_dir <- "/backup/meteorology/" # directory where met data is stored
 outdir=Sys.getenv(c('NLDAS_ROOT'))[1]
 #source(paste(github_location,"HARParchive/HARP-2021-2022","lseg_functions.R", sep = "/"))
@@ -100,6 +101,7 @@ if (is.na(nldas_data$pid)) {
 
 # read in lseg_csv
 ts_file_url <- paste0(nldas_site,"/",dataset,"/",landseg,".PRC")
+ts_ext_file_url <- paste0(ext_url_base, nldas_url_path,"/",dataset,"/",landseg,".PRC")
 timeSeries <- fread(ts_file_url)
 names(timeSeries) <- c('year','month','day','hour','tsvalue')
 # code with correct input directory if running on deq machine
@@ -112,7 +114,7 @@ data_file <- RomProperty$new(
   ),
   TRUE
 )
-data_file$propcode <- ts_file_url
+data_file$propcode <- ts_ext_file_url
 data_file$save(TRUE)
 
 # line of code to help run even with incomplete lseg_csv
