@@ -30,7 +30,7 @@ source(paste(basepath,'config.R',sep='/'))
 
 # load lseg_functions
 # todo: move these to model_meteorology repo
-source(paste(github_location,"HARParchive/HARP-2021-2022","lseg_functions.R", sep = "/"))
+source(paste(github_location,"model_meteorology","R/lseg_functions.R", sep = "/"))
 
 # read in land segment temperature and radiation data
 message("Loading Temperature data")
