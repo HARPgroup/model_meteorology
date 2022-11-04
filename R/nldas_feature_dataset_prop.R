@@ -31,7 +31,8 @@ nldas_datasets <- RomProperty$new(
   ds, list(
     featureid = base_model$pid,
     propname = 'nldas_datasets',
-    entity_type = 'dh_properties'
+    entity_type = 'dh_properties',
+    varkey = 'dataset_tag'
   ),
   TRUE
 )
@@ -43,7 +44,8 @@ nldas_data <- RomProperty$new(
   ds, list(
     featureid = nldas_datasets$pid,
     propname = dataset,
-    entity_type = 'dh_properties'
+    entity_type = 'dh_properties',
+    varkey = 'dataset_tag'
   ),
   TRUE
 )
