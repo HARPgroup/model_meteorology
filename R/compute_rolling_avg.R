@@ -11,16 +11,84 @@ if (length(argst) < 2) {
 
 landseg = argst[1]
 dataset = argst[2]
+landseg_ftype = argst[3]
+model_version_code = argst[4]
 
-# load met functions 
-source("https://raw.githubusercontent.com/HARPgroup/HARParchive/HARP-2021-2022/lseg_functions.R")
-
+# load config defaults
 site <- "http://deq1.bse.vt.edu:81/d.dh"  #Specify the site of interest, either d.bet OR d.dh
 basepath <- '/var/www/R';
 source(paste(basepath,'config.R',sep='/'))
+ds <- RomDataSource$new(site, rest_uname)
+ds$get_token(rest_pw)
+# Variable names
+om_con <- 'om_class_Constant'
+om_file <- 'external_file'
+img_file <- 'dh_image_file'
+
+# load met functions 
+source(paste(github_location,"model_meteorology","R/lseg_functions.R", sep = "/"))
 
 nldas_dir <- "/backup/meteorology/out/lseg_csv" # directory where met data is stored
+# NOTE: the variable "ext_url_base" is the CORRECT ONE TO USE FOR ALL SCRIPTS
+#       this variable is intended to differentiate things like omsite which can
+#       sometimes be an internal private network url wherease 
+#       ext_url_base is ALWAYS an internet accessible address
+nldas_url_base <- paste0(ext_url_base,'/met/out/lseg_csv')
 outdir=Sys.getenv(c('NLDAS_ROOT'))[1]
+
+print(paste0("current landsegment: ", landseg))
+# read in a model container
+lseg_feature <- RomFeature$new(
+  ds, list(
+    ftype = landseg_ftype,
+    bundle = 'landunit',
+    hydrocode = landseg
+  ),
+  TRUE
+)
+if (!(lseg_feature$hydroid > 0)) {
+  message(paste("Could not find", landseg))
+  q("n")
+}
+lseg_model <- RomProperty$new(
+  ds, list(
+    featureid = lseg_feature$hydroid,
+    propcode = model_version_code,
+    propname = paste(lseg_feature$name, model_version_code),
+    varkey = 'om_model_element',
+    entity_type = 'dh_feature'
+  ),
+  TRUE
+)
+if (is.na(lseg_model$pid)) {
+  message(paste("Could not find mode for", landseg, ", creating."))
+  lseg_model$save(TRUE)
+}
+nldas_datasets <- RomProperty$new(
+  ds, list(
+    featureid = lseg_model$pid,
+    propname = 'nldas_datasets',
+    entity_type = 'dh_properties'
+  ),
+  TRUE
+)
+if (is.na(nldas_datasets$pid)) {
+  message(paste("Could not find NLDAS datasets for", landseg, ", creating."))
+  nldas_datasets$save(TRUE)
+}
+nldas_data <- RomProperty$new(
+  ds, list(
+    featureid = nldas_datasets$pid,
+    propname = dataset,
+    entity_type = 'dh_properties'
+  ),
+  TRUE
+)
+if (is.na(nldas_data$pid)) {
+  message(paste("Could not find NLDAS", dataset, ", creating."))
+  nldas_data$save(TRUE)
+}
+
 
 #creating the merged dataset 
 met_rolling_avg <- function(dfTMP, dfPRC, dfHET, dfHSET, dfTOTAL){
@@ -180,6 +248,20 @@ precip6 <- ggplot() +
   xlab("Year") + 
   ylab("Preciptation Days (number of days with measurable precipitation > 0.01 in) 
      and Annual Precipitation Depth (in)") +
-  ggtitle(paste0("Number of Precipitation Days and Annual Precip For Phase 6(Lseg ",landseg6,")"))
+  ggtitle(paste0("Number of Precipitation Days and Annual Precip For Phase 6(Lseg ",landseg,")"))
+
+filename <- paste0(nldas_dir,"/",dataset,"/",landseg,"_rollingAVG_met.png")
+png(filename)
 precip6
-  
+dev.off()
+fileurl <- paste0(nldas_url_base,"/",dataset,"/",landseg,"_rollingAVG_met.png")
+message(paste("Saving image file to:", filename, "URL:", fileurl))
+img_file <- RomProperty$new(
+  ds,
+  list(
+    entity_type='dh_properties',propname='fig_rollingAVG_met',varkey=img_file,featureid=nldas_data$pid
+  ),
+  TRUE
+)
+img_file$propcode <- fileurl
+img_file$save(TRUE)
