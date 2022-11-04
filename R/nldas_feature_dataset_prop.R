@@ -1,5 +1,6 @@
 
-nldas_feature_dataset_prop <- function(ds, hydrocode,bundle,ftype) {
+nldas_feature_dataset_prop <- function(ds, hydrocode,bundle,ftype,rtype='pid') {
+# rtype = object will give a property object
 # read in a model container
 lseg_feature <- RomFeature$new(
   ds, list(
@@ -54,5 +55,9 @@ if (is.na(nldas_data$pid)) {
   nldas_data$save(TRUE)
 }
 
-return(nldas_data$pid)
+if (obtype == 'object') {
+  return(nldas_data)
+} else {
+  return(nldas_data$pid)
+}
 }

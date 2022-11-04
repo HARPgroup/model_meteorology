@@ -27,6 +27,7 @@ img_file <- 'dh_image_file'
 
 # load met functions 
 source(paste(github_location,"model_meteorology","R/lseg_functions.R", sep = "/"))
+source(paste(github_location,"model_meteorology","R/nldas_feature_dataset_prop.R", sep = "/"))
 
 nldas_dir <- "/backup/meteorology/out/lseg_csv" # directory where met data is stored
 # NOTE: the variable "ext_url_base" is the CORRECT ONE TO USE FOR ALL SCRIPTS
@@ -38,57 +39,7 @@ outdir=Sys.getenv(c('NLDAS_ROOT'))[1]
 
 print(paste0("current landsegment: ", landseg))
 # read in a model container
-lseg_feature <- RomFeature$new(
-  ds, list(
-    ftype = landseg_ftype,
-    bundle = 'landunit',
-    hydrocode = landseg
-  ),
-  TRUE
-)
-if (!(lseg_feature$hydroid > 0)) {
-  message(paste("Could not find", landseg))
-  q("n")
-}
-lseg_model <- RomProperty$new(
-  ds, list(
-    featureid = lseg_feature$hydroid,
-    propcode = model_version_code,
-    propname = paste(lseg_feature$name, model_version_code),
-    varkey = 'om_model_element',
-    entity_type = 'dh_feature'
-  ),
-  TRUE
-)
-if (is.na(lseg_model$pid)) {
-  message(paste("Could not find mode for", landseg, ", creating."))
-  lseg_model$save(TRUE)
-}
-nldas_datasets <- RomProperty$new(
-  ds, list(
-    featureid = lseg_model$pid,
-    propname = 'nldas_datasets',
-    entity_type = 'dh_properties'
-  ),
-  TRUE
-)
-if (is.na(nldas_datasets$pid)) {
-  message(paste("Could not find NLDAS datasets for", landseg, ", creating."))
-  nldas_datasets$save(TRUE)
-}
-nldas_data <- RomProperty$new(
-  ds, list(
-    featureid = nldas_datasets$pid,
-    propname = dataset,
-    entity_type = 'dh_properties'
-  ),
-  TRUE
-)
-if (is.na(nldas_data$pid)) {
-  message(paste("Could not find NLDAS", dataset, ", creating."))
-  nldas_data$save(TRUE)
-}
-
+nldas_data <- nldas_dataset_prop(ds, landseg, 'landunit',landseg_ftype, 'object')
 
 #creating the merged dataset 
 met_rolling_avg <- function(dfTMP, dfPRC, dfHET, dfHSET, dfTOTAL){
