@@ -8,6 +8,7 @@ fi
 
 # guess default day till as todays Julian day
 day_till=`date +%j`
+day_till=$(expr $day_till + 0)
 if [ $# -gt 1 ]; then
   day_till=$2
 fi
@@ -27,6 +28,7 @@ if [ $last_last_day -lt $last_year_last_jday ]; then
 fi
 
 last_day=`ls $yr/ | sort -nr | head -n1`
+last_day=$((10#$last_day))
 last_day=$(($last_day + 1))
 # if we are given a day < last obtained and forced to overwrite existing data
 if [ $force -eq 1 ]; then
