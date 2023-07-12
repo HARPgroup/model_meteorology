@@ -39,7 +39,7 @@ outdir=Sys.getenv(c('NLDAS_ROOT'))[1]
 
 print(paste0("current landsegment: ", landseg))
 # read in a model container
-nldas_data <- nldas_dataset_prop(ds, landseg, 'landunit',landseg_ftype, 'object')
+nldas_data <- nldas_feature_dataset_prop(ds, landseg, 'landunit',landseg_ftype, 'object')
 
 #creating the merged dataset 
 met_rolling_avg <- function(dfTMP, dfPRC, dfHET, dfHSET, dfTOTAL){
