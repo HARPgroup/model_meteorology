@@ -1,0 +1,12 @@
+#!/bin/bash
+. hspf_config
+# finds the julian day of the most recent NLDAS in the given year
+if [ $# -lt 1 ]; then
+  yr=`date +%Y`
+else
+  yr=$1
+fi
+last_day=`ls $NLDAS_ROOT/$yr/ | sort -nr | head -n1`
+last_day=$((10#$last_day))
+last_day=$(($last_day + 1))
+echo $last_day

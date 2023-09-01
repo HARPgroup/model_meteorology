@@ -1,0 +1,46 @@
+#!/bin/bash
+. hspf_config
+basin=$1
+sdate=$2
+edate=$3
+sdatemins="${sdate}00"
+edatemins="${edate}23"
+update_years=$4
+basedir=$NLDAS_ROOT
+outdir="$basedir/out/grid_met_csv"
+lsegdir="$basedir/out/lseg_csv"
+# generate full met time period (needed due to potential updates in RNMax)
+
+segs=`cbp get_landsegs $basin`
+cd /backup/meteorology
+for i in $segs; do
+  # handle the grid2land due to an error
+  for yr in $update_years; do
+  # get the last julian day of the year in question
+    echo "Updating $i for $yr"
+    jday=`/backup/meteorology/get_last_nldas_jday $yr`
+    echo "jday from nldas $jday"
+    data_start="${yr}0101"
+    # note: 
+    #   - use should have their stuff together on the date, and subtract a day from it since the last day
+    #     from NLDAS is usually incomplete. so should be nldas jday minus 1, but we must trust here
+    if [ $yr -eq $endyear ]; then
+      jday=`date -d "$date" +%j`
+      echo "Using requested end data as jday $edate"
+    fi
+    echo "jday final $jday"
+    data_end=`date -d "$data_start +$(( $jday ))days" +%Y%m%d`
+    echo "grid2land.sh $data_start $data_end $basedir $outdir $i"
+    grid2land.sh $data_start $data_end $basedir $outdir $i
+  done
+  cd /opt/model/p6/vadeq
+  # convert grid CSVs into land segment CSVs
+  echo "Create data: a2l_one $sdatemins $edatemins $outdir $lsegdir $i"
+  a2l_one $sdatemins $edatemins $outdir $lsegdir $i
+  # update long term averages
+  LongTermAvgRNMax $lsegdir/met2date $lsegdir/RNMax 1 $i
+done
+
+# set up the met2date
+rm /backup/meteorology/out/lseg_csv/met2date
+ln -s /backup/meteorology/out/lseg_csv/${sdatemins}-${edatemins} /backup/meteorology/out/lseg_csv/met2date
