@@ -42,8 +42,8 @@ cYear=$sYear
 complete=0
 while [ $complete != 1 ]; do
  if [ $cYear -le $eYear ]; then
-    echo "NLDAS2_GRIB_to_ASCII $gDir $oDir $sYear $sMonth $sDay 00 $eYear $eMonth $eDay 23 $met_land_cells"
-    NLDAS2_GRIB_to_ASCII $gDir $oDir $sYear $sMonth $sDay 00 $eYear $eMonth $eDay 23 $met_land_cells
+    echo "NLDAS2_GRIB_to_ASCII $gDir $oDir $cYear $sMonth $sDay $sHour $cYear $eMonth $eDay $eHour $met_land_cells"
+    NLDAS2_GRIB_to_ASCII $gDir $oDir $cYear $sMonth $sDay $sHour $cYear $eMonth $eDay $eHour $met_land_cells
   else
     complete=1
   fi
