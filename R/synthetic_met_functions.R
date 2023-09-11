@@ -271,12 +271,12 @@ generate_synthetic_timeseries <- function(lseg_csv, startdate1, enddate1, startd
   
   # return new time series as list
   dfSYNTHETIC <- list(
-    "RAD" = dfRAD_MASH,
-    "TMP" = dfTMP_MASH,
-    "PET" = dfPET_MASH, 
-    "PRC" = dfPRC_MASH,
-    "WND" = dfWND_MASH,
-    "DPT" = dfDPT_MASH)
+    "RAD" = leap_year_correction(dfRAD_MASH),
+    "TMP" = leap_year_correction(dfTMP_MASH),
+    "PET" = leap_year_correction(dfPET_MASH), 
+    "PRC" = leap_year_correction(dfPRC_MASH),
+    "WND" = leap_year_correction(dfWND_MASH),
+    "DPT" = leap_year_correction(dfDPT_MASH))
   
   return(dfSYNTHETIC)
 }
@@ -289,8 +289,11 @@ leap_year_correction <- function(met_ts) {
       # insure that February has 29 days (if full month of february)
       febn <- sqldf(
         paste0(
-          "select count(*) from met_ts
-           where year = ", yr
+          "select count(*) from (
+             select year, month, day from met_ts
+             where month = 2 AND year = ", yr, 
+             " group by year, month, day 
+          ) as foo"
         )
       )
       if (febn == 28) {
@@ -310,8 +313,7 @@ leap_year_correction <- function(met_ts) {
                select * from met_ts
                UNION 
                select * from feb29
-               where year <> ", yr,
-            ") order by year, month, day"
+            ) order by year, month, day"
           )
         )
         # If it had less than 28, we conclude that the timeseries stops before the end of February
