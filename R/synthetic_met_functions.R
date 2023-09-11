@@ -281,6 +281,59 @@ generate_synthetic_timeseries <- function(lseg_csv, startdate1, enddate1, startd
   return(dfSYNTHETIC)
 }
 
+leap_year_correction <- function(met_ts) {
+  met_years <- sqldf("select year, count(*) from met_ts group by year order by year")
+  for (i in nrow(met_years)) {
+    yr <- met_years[i,]$year
+    if ((julian.Date(date(paste0(yr,"-12-31")), origin=date(paste0(yr-1,"-12-31"))))[1] > 365) {
+      # insure that February has 29 days (if full month of february)
+      febn <- sqldf(
+        paste0(
+          "select count(*) from met_ts
+           where year = ", yr
+        )
+      )
+      if (febn == 28) {
+        # if it has 28 we know that it *needs* a leap year, and the intention is for a full month of February
+        # so we duplicate the 28th
+        feb29 <- sqldf(
+          paste0(
+            "select * from met_ts
+           where (cast(month as INT) || day) == '228'
+           and year = ", yr
+          )
+        )
+        feb29$day <- 29
+        met_ts <- sqldf(
+          paste0(
+            "select * from (
+               select * from met_ts
+               UNION 
+               select * from feb29
+               where year <> ", yr,
+            ") order by year, month, day"
+          )
+        )
+        # If it had less than 28, we conclude that the timeseries stops before the end of February
+        # If it has more than 28 then we know it is just fine and we do nothing
+      }
+    } else {
+      # insure that February has 28 days (if full month of february)
+      met_ts <- sqldf(
+        paste0(
+          "select * from met_ts
+           where (cast(month as INT) || day) <> '229'
+           and year = ", yr," 
+           UNION 
+           select * from met_ts
+           where year <> ", yr
+        )
+      )
+    }
+  }
+  return(met_ts)
+}
+
 
 # posting timeseries function
 # inputs a land segment
