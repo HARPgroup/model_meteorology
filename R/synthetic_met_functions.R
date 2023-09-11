@@ -286,7 +286,7 @@ leap_year_correction <- function(met_ts) {
   for (i in nrow(met_years)) {
     yr <- met_years[i,]$year
     if ((julian.Date(date(paste0(yr,"-12-31")), origin=date(paste0(yr-1,"-12-31"))))[1] > 365) {
-      # insure that February has 29 days (if full month of february)
+      # insure that February has 29 days (if full month of February)
       febn <- sqldf(
         paste0(
           "select count(*) from (
@@ -336,6 +336,27 @@ leap_year_correction <- function(met_ts) {
   return(met_ts)
 }
 
+timeseries_correction <- function(met_ts, time_template, data_col) {
+  harmo <- sqldf(
+    paste0(
+      " 
+        select a.year, a.month, a.day, avg(b.", data_col,") 
+        from time_template as a 
+        left outer join 
+        leapdat as b 
+        on (
+          a.year = b.year 
+          and a.month = b.month 
+          and a.day = b.day 
+          and a.hour = b.hour
+        ) 
+        group by a.year, a.month, a.day, a.hour 
+        order by a.year, a.month, a.day, a.hour 
+      "
+    )
+  )
+  return(harmo)
+}
 
 # posting timeseries function
 # inputs a land segment
