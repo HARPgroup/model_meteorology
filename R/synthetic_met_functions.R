@@ -337,6 +337,8 @@ leap_year_correction <- function(met_ts) {
 }
 
 timeseries_correction <- function(met_ts, time_template, data_col) {
+  colnames(met_ts) = c("year","month","day","hour",data_col)
+  colnames(time_template) = c("year","month","day","hour",data_col)
   harmo <- sqldf(
     paste0(
       " 
