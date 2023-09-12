@@ -343,6 +343,9 @@ timeseries_correction <- function(met_ts, time_template, data_col) {
   }
   colnames(met_ts) = c("year","month","day","hour",data_col)
   colnames(time_template) = c("year","month","day","hour",data_col)
+  # we have a clause below 'where a.hour <> 0' because the 
+  # WDM export routine sets an hour of 0 for the first record, the 1-24 for everything
+  # afterwards. Weird.
   harmo <- sqldf(
     paste0(
       " 
@@ -356,6 +359,7 @@ timeseries_correction <- function(met_ts, time_template, data_col) {
           and a.day = b.day 
           and a.hour = (b.hour - 1)
         ) 
+        where a.hour <> 0
         group by a.year, a.month, a.day, a.hour 
         order by a.year, a.month, a.day, a.hour 
       "
