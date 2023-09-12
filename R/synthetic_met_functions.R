@@ -343,13 +343,10 @@ timeseries_correction <- function(met_ts, time_template, data_col) {
   }
   colnames(met_ts) = c("year","month","day","hour",data_col)
   colnames(time_template) = c("year","month","day","hour",data_col)
-  # we have a clause below 'where a.hour <> 0' because the 
-  # WDM export routine sets an hour of 0 for the first record, the 1-24 for everything
-  # afterwards. Weird.
   harmo <- sqldf(
     paste0(
       " 
-        select a.year, a.month, a.day, a.hour, avg(b.", data_col,") as ", data_col, " 
+        select a.year, a.month, a.day, a.hour, avg(b.", data_col,") as ", tsvalue, " 
         from time_template as a 
         left outer join 
         met_ts as b 
@@ -359,9 +356,25 @@ timeseries_correction <- function(met_ts, time_template, data_col) {
           and a.day = b.day 
           and a.hour = b.hour
         ) 
-        where a.hour <> 0
         group by a.year, a.month, a.day, a.hour 
         order by a.year, a.month, a.day, a.hour 
+      "
+    )
+  )
+  # we fix NULL values here
+  # also, this fixes where hour = 0 because the 
+  # WDM export routine sets an hour of 0 for the first record, the 1-24 for everything
+  # afterwards. Weird. But we keep it, since it will require it as input
+  harmo <- sqldf(
+    paste0(
+      " 
+        select year, month, day, hour, 
+           CASE 
+              WHEN tsvalue IS NULL THEN 0.0
+              ELSE tsvalue
+           END as tsvalue,
+        from harmo
+        order by year, month, day, hour 
       "
     )
   )
