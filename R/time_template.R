@@ -7,6 +7,7 @@ argst <- commandArgs(trailingOnly=T)
 if (length(argst) < 3) {
   message("Use: Rscript time_template.R landseg in_dir time_template")
   message("Ex: Rscript time_template.R N51011 /backup/meteorology/out/lseg_csv/mash/ /tmp/met_1000.csv")
+  message("Note: to make a time template, use 'make_wdm_template', ex: cbp make_wdm_template 1984 2024 met 1000")
   q("no")
 }
 landseg <- as.character(argst[1])
