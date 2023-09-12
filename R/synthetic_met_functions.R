@@ -372,7 +372,7 @@ timeseries_correction <- function(met_ts, time_template, data_col) {
            CASE 
               WHEN tsvalue IS NULL THEN 0.0
               ELSE tsvalue
-           END as tsvalue,
+           END as tsvalue
         from harmo
         order by year, month, day, hour 
       "
