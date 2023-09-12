@@ -13,7 +13,7 @@ if (length(argst) < 3) {
 }
 landseg <- as.character(argst[1])
 in_dir <- as.character(argst[2]) 
-time_template <- as.character(argst[3]) 
+wdm_template <- as.character(argst[3]) 
 
 time_template <- data.table::fread(wdm_template)
 #./make_wdm_template 1984 2024 met 1000
