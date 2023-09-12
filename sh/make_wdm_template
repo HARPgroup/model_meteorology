@@ -1,0 +1,46 @@
+#!/bin/bash
+if [ $# -lt 5 ]; then
+  echo "Use: make_wdm_template syear eyear type dsn outdir"
+  echo "Ex: make_wdm_template 1984 2024 met 1000 /backup/meteorology/out/lseg_csv/mash"
+. hspf_config
+
+syear=$1
+eyear=$2
+type=$3
+dsn=$4
+outdir=$5
+
+if [ "$type" == "prad" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/blank_prad.wdm
+elif [ "$type" == "hourly_clouds" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/blank_met_hourly_clouds.wdm
+elif [ "$type" == "landAg" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/landAg.wdm
+elif [ "$type" == "att" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/att.wdm
+elif [ "$type" == "div" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/blank_div.wdm
+elif [ "$type" == "dummy" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/dummy.wdm
+elif [ "$type" == "river" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/river.wdm
+elif [ "$type" == "septic" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/blank_septic.wdm
+elif [ "$type" == "ps_sep_div" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/blank_ps_sep_div.wdm
+elif [ "$type" == "land" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/land.wdm
+elif [ "$type" == "ps_sep_div_ams" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/blank_ps_sep_div_ams.wdm
+elif [ "$type" == "met" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/blank_met.wdm
+elif [ "$type" == "pointsource" ]; then
+   wdm=$CBP_ROOT/config/blank_wdm/blank_pointsource.wdm
+fi
+
+cd $outdir
+cp $wdm "./${type}.wdm"
+params="${type}.wdm,$syear,$eyear,$dsn"
+echo "echo $params | wdm2text"
+echo $params | wdm2text
+

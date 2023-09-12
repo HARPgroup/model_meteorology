@@ -2,7 +2,7 @@
 . hspf_config
 
 if [ $# -lt 7 ]; then
-  echo "Usage: wdm_pm_one land_segment sdate=YYYYMMDD edate=YYYYMMDD datasource version met_scen prad_scen [pdname=sdate-edate]"
+  echo "Usage: wdm_pm_one land_segment sdate=YYYYMMDD edate=YYYYMMDD datasource version met_scen prad_scen [pdname=sdate-edate] [mode=overwrite/append"
   echo "Example  ./wdm_pm_one A51031 1984010101 20201231 nldas2 harp2021 nldas1221 p20211221"
   exit
 fi
@@ -19,6 +19,11 @@ if [ $# -gt 7 ]; then
 else 
   pdname="$sDate-$eDate"
 fi
+if [ $# -gt 8 ]; then
+  mode=$9
+else 
+  mode="overwrite"
+fi
 
 echo "Land Segment: $1"
 echo "The start date (YYYYMMDD) of the timeframe is $sDate"
@@ -31,27 +36,35 @@ echo "The desired output directory is $oDir"
 sYear=$(echo $sDate | cut -c1-4)
 eYear=$(echo $eDate | cut -c1-4)
 
-# change into cbp code tree @todo fix paths in executables so this is not necessary
-echo "cd $CBP_SRC/prad_met/"
-cd $CBP_SRC/prad_met/
-echo "cp blank_prad.wdm prad_$land_segment.wdm"
-cp blank_prad.wdm prad_$land_segment.wdm
-echo "cp blank_met.wdm met_$land_segment.wdm"
-cp blank_met.wdm met_$land_segment.wdm
+# change into cbp input tree @todo fix paths in executables so this is not necessary
+# wdm_insert_ONE has a fixed relative path that it expects which makes this necessary for now
+echo "cd $CBP_ROOT/input/unformatted/$data_source"
+cd $CBP_ROOT/input/unformatted/$data_source
+# 
+if [ $mode == 'append' ]; then
+  cp $CBP_ROOT/input/scenario/climate/met/$met_scen/met_${land_segment}.wdm ./
+  cp $CBP_ROOT/input/scenario/climate/prad/$prad_scen/prad_${land_segment}.wdm ./
+else
+  echo "cp $CBP_ROOT/config/blank_wdm/blank_prad.wdm prad_$land_segment.wdm"
+  cp $CBP_ROOT/config/blank_wdm/blank_prad.wdm prad_$land_segment.wdm
+  echo "cp $CBP_ROOT/config/blank_wdm/blank_met.wdm met_$land_segment.wdm"
+  cp $CBP_ROOT/config/blank_wdm/blank_met.wdm met_$land_segment.wdm
+fi
+cp $CBP_ROOT/config/blank_wdm/message.wdm ./
 echo "Blank wdm files created"
 
 # Make sure the out dirs are set
 # wdm_insert_ALL expects the data to be in 
 # CBP_ROOT/input/unformatted/[data source]/[version]
 # ex: cbp_root/unformatted/nldas2/harp2021
-if [ ! -d $oDir ]; then
   if [ ! -d "$CBP_ROOT/input/unformatted" ] ; then mkdir  $CBP_ROOT/input/unformatted; fi
   if [ ! -d "$CBP_ROOT/input/unformatted/$data_source" ] ; then mkdir  $CBP_ROOT/input/unformatted/$data_source ; fi
   if [ ! -d "$CBP_ROOT/input/unformatted/RNMax" ] ; then mkdir  $CBP_ROOT/input/unformatted/RNMax ; fi
   if [ ! -d "$CBP_ROOT/input/unformatted/$data_source/$version" ] ; then mkdir  $CBP_ROOT/input/unformatted/$data_source/$version ; fi
   if [ ! -d "$CBP_ROOT/input/unformatted/$data_source/$version/RNMax" ] ; then mkdir  $CBP_ROOT/input/unformatted/$data_source/$version/RNMax ; fi
   if [ ! -d "$CBP_ROOT/input/scenario/climate/met/$met_scen" ] ; then mkdir  $CBP_ROOT/input/scenario/climate/met/$met_scen ; fi
-  if [ ! -d "$CBP_ROOT/input/scenario/climate/prad/$prad_scen" ] ; then mkdir  $CBP_ROOT/input/scenario/climate/met/$prad_scen ; fi
+  if [ ! -d "$CBP_ROOT/input/scenario/climate/prad/$prad_scen" ] ; then mkdir  $CBP_ROOT/input/scenario/climate/prad/$prad_scen ; fi
+if [ ! -d "$CBP_ROOT/input/unformatted/$oDir" ]; then 
   echo "mkdir $CBP_ROOT/input/unformatted/$oDir"
   mkdir $CBP_ROOT/input/unformatted/$oDir
 fi
@@ -63,9 +76,13 @@ cp $NLDAS_ROOT/out/lseg_csv/$pdname/$land_segment.* $CBP_ROOT/input/unformatted/
 echo "cp $NLDAS_ROOT/out/lseg_csv/RNMax/$land_segment.RNMax $CBP_ROOT/input/unformatted/$data_source/$version/RNMax"
 cp $NLDAS_ROOT/out/lseg_csv/RNMax/$land_segment.RNMax $CBP_ROOT/input/unformatted/$data_source/$version/RNMax/
 # now convert these CSVs to WDMs
-echo "echo $land_segment nldas2 harp2021 $pdname $sYear $eYear 1 1 1 1 1 1 1 | wdm_insert_ALL"
-echo "$land_segment nldas2 harp2021 $pdname $sYear $eYear 1 1 1 1 1 1 1" | wdm_insert_ALL
-echo "wdm files populated"
+echo "echo $land_segment $data_source $version $pdname $sYear $eYear 1 1 1 1 1 1 1 | wdm_insert_ALL"
+echo "$land_segment $data_source $version $pdname $sYear $eYear 1 1 1 1 1 1 1" | wdm_insert_ALL
+# Try new one with full date (not yet working)
+#echo "echo $land_segment $data_source $version $pdname $sDate $eDate 1 1 1 1 1 1 1 | wdm_insert_ALL"
+#echo "$land_segment $data_source $version $pdname $sDate $eDate 1 1 1 1 1 1 1" | wdm_insert_ALL
+#echo "wdm files populated"
 
 mv "met_$land_segment.wdm" $CBP_ROOT/input/scenario/climate/met/$met_scen/
 mv "prad_$land_segment.wdm" $CBP_ROOT/input/scenario/climate/prad/$prad_scen/
+rm message.wdm
