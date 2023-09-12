@@ -337,12 +337,16 @@ leap_year_correction <- function(met_ts) {
 }
 
 timeseries_correction <- function(met_ts, time_template, data_col) {
+  if (ncol(met_ts) < 5) {
+    message(paste("Daily time series for", data_col,"no correction applied.") )
+    return(met_ts)
+  }
   colnames(met_ts) = c("year","month","day","hour",data_col)
   colnames(time_template) = c("year","month","day","hour",data_col)
   harmo <- sqldf(
     paste0(
       " 
-        select a.year, a.month, a.day, avg(b.", data_col,") 
+        select a.year, a.month, a.day, avg(b.", data_col,") as ", data_col, " 
         from time_template as a 
         left outer join 
         met_ts as b 
