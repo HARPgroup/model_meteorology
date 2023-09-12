@@ -19,8 +19,7 @@ time_template <- data.table::fread(wdm_template)
 #./make_wdm_template 1984 2024 met 1000
 
 fexts <- c('PRC', 'PET', 'TMP', 'RAD', 'DPT', 'WND')
-for (i in length(fexts)) {
-  fext <- fexts[i]
+for (fext in fexts) {
   fname <- paste0(in_dir,"/",landseg,".", fext)
   message(paste("Opening", fname))
   met_ts <- data.table::fread(fname)
