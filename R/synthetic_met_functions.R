@@ -346,7 +346,7 @@ timeseries_correction <- function(met_ts, time_template, data_col) {
   harmo <- sqldf(
     paste0(
       " 
-        select a.year, a.month, a.day, avg(b.", data_col,") as ", data_col, " 
+        select a.year, a.month, a.day, a.hour, avg(b.", data_col,") as ", data_col, " 
         from time_template as a 
         left outer join 
         met_ts as b 

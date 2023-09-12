@@ -25,6 +25,6 @@ for (fext in fexts) {
   met_ts <- data.table::fread(fname)
   met_ts <- timeseries_correction(met_ts, time_template, fext)
   message(paste("Saving", fname))
-  data.table::fwrite(met_ts, fname)
+  data.table::fwrite(met_ts, fname, col.names=FALSE)
 }
 
