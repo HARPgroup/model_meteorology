@@ -22,8 +22,10 @@ fexts <- c('PRC', 'PET', 'TMP', 'RAD', 'DPT', 'WND')
 for (i in length(fexts)) {
   fext <- fexts[i]
   fname <- paste0(in_dir,"/",landseg,".", fext)
+  message(paste("Opening", fname))
   met_ts <- data.table::fread(fname)
   met_ts <- timeseries_correction(met_ts, time_template, fext)
+  message(paste("Saving", fname))
   data.table::fwrite(met_ts, fname)
 }
 
