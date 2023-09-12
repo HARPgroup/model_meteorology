@@ -23,7 +23,7 @@ for (i in length(fexts)) {
   fext <- fexts[i]
   fname <- paste0(in_dir,"/",landseg,".", fext)
   met_ts <- data.table::fread(fname)
-  met_ts <- timeseries_correction(met_ts, time_template, data_col)
+  met_ts <- timeseries_correction(met_ts, time_template, fext)
   data.table::fwrite(met_ts, fname)
 }
 
