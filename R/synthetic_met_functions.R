@@ -343,7 +343,7 @@ timeseries_correction <- function(met_ts, time_template, data_col) {
         select a.year, a.month, a.day, avg(b.", data_col,") 
         from time_template as a 
         left outer join 
-        leapdat as b 
+        met_ts as b 
         on (
           a.year = b.year 
           and a.month = b.month 
