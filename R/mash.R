@@ -1,6 +1,6 @@
 # cc manipulation
 # 6.35%
-
+options(scipen=999) # disable scientific notation in dataframes
 # get inputs
 argst <- commandArgs(trailingOnly=T)
 if (length(argst) < 5) {
