@@ -356,7 +356,6 @@ timeseries_correction <- function(met_ts, time_template, data_col) {
           and a.day = b.day 
           and a.hour = b.hour
         ) 
-        where a.hour <> 0
         group by a.year, a.month, a.day, a.hour 
         order by a.year, a.month, a.day, a.hour 
       "
