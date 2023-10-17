@@ -18,7 +18,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
   # downloading entire timeseries data
   # using web directory or linux terminal directory
   message("Reading observed met data")
-  message(paste("RAD:",paste0(data_path,"/",landseg, ".RAD"))
+  message(paste("RAD:",paste0(data_path,"/",landseg, ".RAD")))
   dfRAD <- data.table::fread(paste0(data_path,"/",landseg, ".RAD"))
   dfTMP <- data.table::fread(paste0(data_path,"/",landseg, ".TMP"))
   dfPET <- data.table::fread(paste0(data_path,"/",landseg, ".PET"))
