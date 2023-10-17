@@ -35,6 +35,7 @@ if (length(argst) >= 6) {
 if (length(argst) >= 7) {
   out_dir <- as.character(argst[7]) 
 }
+method <- 1
 if (length(argst) >= 8) {
   method <- as.integer(argst[8]) 
 }
