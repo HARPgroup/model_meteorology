@@ -186,7 +186,8 @@ make_single_synts <- function(base_ts, startdate1, enddate1, startdate2, enddate
 }
 
 make_single_synts_test <- function(base_ts, startdate1, enddate1, startdate2, enddate2){
-  
+  # uses strict numerical addition to create synthetic date range, then uses sqlite (or other sqldf engine)
+  # to make the new timestamp which should handle leaps, DST etc without incident.
   date_ranges = as.data.frame(list(startdate1 = startdate1, enddate1 = enddate1, startdate2 = startdate2, enddate1 = enddate1, enddate2 = enddate2))
   date_ranges <- sqldf(
     "
