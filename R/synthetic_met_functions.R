@@ -116,6 +116,22 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
   
 }
 
+make_sane_hours <- function(base_ts) {
+  if (max(base_ts$hour) > 23) {
+    base_ts$hour <- base_ts$hour - 1
+  }
+  return(base_ts)
+}
+
+make_cbp_hours <- function(base_ts) {
+  if (min(base_ts$hour) == 0) {
+    base_ts$hour <- base_ts$hour + 1
+  }
+  return(base_ts)
+}
+
+# do a single, flexible period adjustment
+# requires that data column is named tsvalue
 # do a single, flexible period adjustment
 # requires that data column is named tsvalue
 make_single_synts <- function(base_ts, startdate1, enddate1, startdate2, enddate2){
@@ -161,6 +177,65 @@ make_single_synts <- function(base_ts, startdate1, enddate1, startdate2, enddate
   select * from (
     select * from base_ts 
     UNION select * from mash_ts
+  ) as foo
+  order by year, month, day, hour
+  "
+  )
+  return(mash_ts)
+}
+
+make_single_synts_test <- function(base_ts, startdate1, enddate1, startdate2, enddate2){
+  
+  date_ranges = as.data.frame(list(startdate1 = startdate1, enddate1 = enddate1, startdate2 = startdate2, enddate1 = enddate1, enddate2 = enddate2))
+  date_ranges <- sqldf(
+    "
+   SELECT datetime(enddate1) as last_real, datetime(startdate2) as startdate2, datetime(enddate2) as enddate2, 
+      datetime(unixepoch(startdate2) + (unixepoch(enddate1) - unixepoch(startdate2) + 3600 ), 'unixepoch')  as next_date, 
+      (unixepoch(startdate2) - unixepoch(enddate1))  as extra_secs, 
+      (unixepoch(enddate1) - unixepoch(startdate2) ) as offset_tsecs ,
+      unixepoch(enddate1) end1_ts, unixepoch(startdate2) as start2_ts
+    from date_ranges 
+  "
+  )
+  
+  base_ts <- sqldf(
+    "select a.year, a.month, a.day, a.hour, 
+   datetime( 
+     (a.year ||'-'|| substr('0' || a.month, -2, 2) ||'-' || substr('0' || a.day, -2, 2) || ' ' || substr('0' || a.hour, -2, 2) || ':00:00')
+   ) as thisdate, tsvalue
+   from base_ts as a 
+  "
+  )
+  base_ts <- sqldf(
+    "
+     select * from base_ts as a 
+     where thisdate <= (select max(last_real) from date_ranges)
+    "
+  )
+  
+  mash_ts <- sqldf(
+    "select a.year, a.month, a.day, a.hour, 
+   datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) as thisdate, tsvalue
+   from base_ts as a 
+   left outer join date_ranges as b 
+   on (1 = 1) 
+   where a.thisdate >= b.startdate2 
+     and datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) <= b.enddate2
+   "
+  )
+  mash_ts$year <- as.integer(format(as.Date(mash_ts$thisdate,tz="UTC"), format='%Y'))
+  mash_ts$month <- as.integer(format(as.Date(mash_ts$thisdate,tz="UTC"), format='%m'))
+  mash_ts$day <- as.integer(format(as.Date(mash_ts$thisdate,tz="UTC"), format='%d'))
+  mash_ts$hour <- as.integer(format(as.POSIXct(mash_ts$thisdate,tz="UTC"), format='%H')) + 1
+  
+  new_ts <- rbind(base_ts, mash_ts)
+  
+  mash_ts <- sqldf(
+    "
+  select * from (
+    select a.year, a.month, a.day, a.hour, a.tsvalue from base_ts as a 
+      where a.thisdate < (select max(startdate2) from date_ranges)
+    UNION select year, month, day, hour, tsvalue from mash_ts
   ) as foo
   order by year, month, day, hour
   "
