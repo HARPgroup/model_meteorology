@@ -53,8 +53,9 @@ if (length(argst) >= 7) {
 lseg_csv <- get_lseg_csv(landseg = landseg, startdate = startdate1, enddate = enddate1, data_path = in_dir)
 
 # run generate_synthetic_timeseries to append two time periods together
+message("Calling generate_synthetic_timeseries()")
 mash_up <- generate_synthetic_timeseries(lseg_csv = lseg_csv, startdate1 = startdate1, enddate1 = enddate1, startdate2 = startdate2, enddate2 = enddate2)
-
+message("Returned from generate_synthetic_timeseries()")
 fexts <- c('PRC', 'PET', 'TMP', 'RAD', 'DPT', 'WND')
 for (fext in fexts) {
   fname <- paste0(in_dir,"/",landseg,".", fext)
@@ -62,7 +63,7 @@ for (fext in fexts) {
   base_ts <- data.table::fread(fname)
   colnames(base_ts) <- c('year', 'month', 'day', 'hour', 'tsvalue')
   mash_ts <- make_single_synts(base_ts, startdate1, enddate1, startdate2, enddate2)
-  foutname <- paste0(out_dir,"/",landseg,".", fext)
+  foutname <- paste0(out_dir,"/",landseg,"-new.", fext)
   message(paste("Saving", foutname))
   data.table::fwrite(mash_ts, fname, col.names=FALSE)
 }

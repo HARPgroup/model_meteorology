@@ -18,6 +18,7 @@ get_lseg_csv <- function(landseg, startdate, enddate, data_path){
   # downloading entire timeseries data
   # using web directory or linux terminal directory
   message("Reading observed met data")
+  message(paste("RAD:",paste0(data_path,"/",landseg, ".RAD"))
   dfRAD <- data.table::fread(paste0(data_path,"/",landseg, ".RAD"))
   dfTMP <- data.table::fread(paste0(data_path,"/",landseg, ".TMP"))
   dfPET <- data.table::fread(paste0(data_path,"/",landseg, ".PET"))
@@ -315,6 +316,13 @@ generate_synthetic_timeseries <- function(lseg_csv, startdate1, enddate1, startd
   colnames(dfDPT2) = c("year","month","day","hour","DPT")
   
   # combining two timeseries
+#  dfRAD_MASH <- rbind(dfRAD1, leap_year_correction(dfRAD2))
+#  dfTMP_MASH <- rbind(dfTMP1, leap_year_correction(dfTMP2))
+#  dfPET_MASH <- rbind(dfPET1, leap_year_correction(dfPET2))
+#  dfPRC_MASH <- rbind(dfPRC1, leap_year_correction(dfPRC2))
+#  dfWND_MASH <- rbind(dfWND1, leap_year_correction(dfWND2))
+#  dfDPT_MASH <- rbind(dfDPT1, leap_year_correction(dfDPT2))
+
   dfRAD_MASH <- rbind(dfRAD1, dfRAD2)
   dfTMP_MASH <- rbind(dfTMP1, dfTMP2)
   dfPET_MASH <- rbind(dfPET1, dfPET2)
