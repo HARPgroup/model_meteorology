@@ -193,7 +193,7 @@ make_single_synts_test <- function(base_ts, startdate1, enddate1, startdate2, en
    SELECT datetime(enddate1) as last_real, datetime(startdate2) as startdate2, datetime(enddate2) as enddate2, 
       datetime(unixepoch(startdate2) + (unixepoch(enddate1) - unixepoch(startdate2) + 3600 ), 'unixepoch')  as next_date, 
       (unixepoch(startdate2) - unixepoch(enddate1))  as extra_secs, 
-      (86400 + unixepoch(enddate1) - unixepoch(startdate2) ) as offset_tsecs ,
+      (unixepoch(enddate1) - unixepoch(startdate2) ) as offset_tsecs ,
       unixepoch(enddate1) end1_ts, unixepoch(startdate2) as start2_ts
     from date_ranges 
     "
