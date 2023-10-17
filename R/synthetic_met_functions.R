@@ -142,7 +142,7 @@ make_single_synts <- function(base_ts, startdate1, enddate1, startdate2, enddate
   )
   mash_ts <- sqldf(
     "select a.year, a.month, a.day, a.hour, 
-   datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) as thisdate, PRC
+   datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) as thisdate, tsvalue
    from base_ts as a 
    left outer join date_ranges as b 
    on (1 = 1) 
@@ -324,12 +324,22 @@ generate_synthetic_timeseries <- function(lseg_csv, startdate1, enddate1, startd
   
   # return new time series as list
   dfSYNTHETIC <- list(
-    "RAD" = leap_year_correction(dfRAD_MASH),
-    "TMP" = leap_year_correction(dfTMP_MASH),
-    "PET" = leap_year_correction(dfPET_MASH), 
-    "PRC" = leap_year_correction(dfPRC_MASH),
-    "WND" = leap_year_correction(dfWND_MASH),
-    "DPT" = leap_year_correction(dfDPT_MASH))
+    "RAD" = dfRAD_MASH,
+    "TMP" = dfTMP_MASH,
+    "PET" = dfPET_MASH, 
+    "PRC" = dfPRC_MASH,
+    "WND" = dfWND_MASH,
+    "DPT" = dfDPT_MASH
+  )
+
+  # return new time series as list
+#  dfSYNTHETIC <- list(
+#    "RAD" = leap_year_correction(dfRAD_MASH),
+#    "TMP" = leap_year_correction(dfTMP_MASH),
+#    "PET" = leap_year_correction(dfPET_MASH), 
+#    "PRC" = leap_year_correction(dfPRC_MASH),
+#    "WND" = leap_year_correction(dfWND_MASH),
+#    "DPT" = leap_year_correction(dfDPT_MASH))
   
   return(dfSYNTHETIC)
 }
