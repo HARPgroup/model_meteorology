@@ -159,7 +159,7 @@ make_single_synts <- function(base_ts, startdate1, enddate1, startdate2, enddate
   
   mash_ts <- sqldf(
     "
-  select * from (
+  select year, month, day, hour, tsvalue from (
     select * from base_ts 
     UNION select * from mash_ts
   ) as foo
