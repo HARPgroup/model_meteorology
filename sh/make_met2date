@@ -3,15 +3,27 @@
 basin=$1
 sdate=$2
 edate=$3
+update_years=$4
+if [ $# -gt 4 ]; then
+  mode=$5
+else
+  mode='basin'
+fi
+endyear=`date +%Y`
 sdatemins="${sdate}00"
 edatemins="${edate}23"
-update_years=$4
 basedir=$NLDAS_ROOT
 outdir="$basedir/out/grid_met_csv"
 lsegdir="$basedir/out/lseg_csv"
 # generate full met time period (needed due to potential updates in RNMax)
 
-segs=`cbp get_landsegs $basin`
+if [ "$mode" == "basin" ]; then
+  segs=`cbp get_landsegs $basin`
+else
+  # assumes a single land seg has been passed in
+  segs=$basin
+fi
+echo "mode=$mode, segs=$segs"
 cd /backup/meteorology
 for i in $segs; do
   # handle the grid2land due to an error
@@ -25,11 +37,13 @@ for i in $segs; do
     #   - use should have their stuff together on the date, and subtract a day from it since the last day
     #     from NLDAS is usually incomplete. so should be nldas jday minus 1, but we must trust here
     if [ $yr -eq $endyear ]; then
-      jday=`date -d "$date" +%j`
+      jday=`date -d "$edate" +%j`
+      echo "jday final $jday"
       echo "Using requested end data as jday $edate"
+      data_end=`date -d "$data_start +$(( $jday ))days" +%Y%m%d`
+    else
+      data_end="${yr}1231"
     fi
-    echo "jday final $jday"
-    data_end=`date -d "$data_start +$(( $jday ))days" +%Y%m%d`
     echo "grid2land.sh $data_start $data_end $basedir $outdir $i"
     grid2land.sh $data_start $data_end $basedir $outdir $i
   done
