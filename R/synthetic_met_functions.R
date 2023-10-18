@@ -135,23 +135,25 @@ make_cbp_hours <- function(base_ts) {
 # requires that data column is named tsvalue
 # do a single, flexible period adjustment
 # requires that data column is named tsvalue
-make_single_synts <- function(base_ts, startdate1, enddate1, startdate2, enddate2){
+make_single_synts <- function(base_ts, startdate1, beginsynth, start_source_date, endsynth){
   # uses strict numerical addition to create synthetic date range, then uses sqlite (or other sqldf engine)
   # to make the new timestamp which should handle leaps, DST etc without incident.
-  date_ranges = as.data.frame(list(startdate1 = startdate1, enddate1 = enddate1, startdate2 = startdate2, enddate1 = enddate1, enddate2 = enddate2))
-  # the addition of the 23 hours to the end insures that the date converts to a timestamp ending on that day at midnite 
+  date_ranges = as.data.frame(list(startdate1 = startdate1, beginsynth = beginsynth, start_source_date = start_source_date, beginsynth = beginsynth, endsynth = endsynth))
+  # the addition of the 24 hours to the end insures that the date converts to a timestamp ending on that day at midnite 
+  # later we use a less-than to prescribe this range so we are exactly the TS we asked for (tho the wd reoutien will handle extras OK)
+  # we add +1 hour to the beginning of synth because the sqlite uses a 1-24 hour notation
+  # and if we don't the datetime becomes 0 hour, which is equal to the day before 24th hour
+  # which is really a bug I think in the way sqldf handles the comparison? 
   date_ranges <- sqldf(
     "
-   SELECT datetime(enddate1, '+23 hours') as last_real, datetime(startdate2) as startdate2, datetime(enddate2, '+23 hours') as enddate2, 
-      datetime(unixepoch(startdate2) + (unixepoch(enddate1) - unixepoch(startdate2) + 3600 ), 'unixepoch')  as next_date, 
-      (unixepoch(startdate2) - unixepoch(enddate1))  as extra_secs, 
-      (unixepoch(enddate1) - unixepoch(startdate2) ) as offset_tsecs ,
-      unixepoch(enddate1) end1_ts, unixepoch(startdate2) as start2_ts
+   SELECT datetime(start_source_date, '-1 hours') as start_source_date, datetime(endsynth, '+24 hours') as endsynth, 
+      datetime(beginsynth)  as beginsynth, 
+      (unixepoch(beginsynth) - unixepoch(start_source_date) ) as offset_tsecs 
     from date_ranges 
     "
   )
   
-  base_ts <- sqldf(
+  real_ts <- sqldf(
     "select a.year, a.month, a.day, a.hour, 
    datetime( 
      (a.year ||'-'|| substr('0' || a.month, -2, 2) ||'-' || substr('0' || a.day, -2, 2) || ' ' || substr('0' || a.hour, -2, 2) || ':00:00')
@@ -159,36 +161,54 @@ make_single_synts <- function(base_ts, startdate1, enddate1, startdate2, enddate
    from base_ts as a 
   "
   )
-  base_ts <- sqldf(
+  real_ts <- sqldf(
     "
-     select * from base_ts as a 
-     where thisdate <= (select max(last_real) from date_ranges)
+     select * from real_ts as a 
+     where thisdate < (select max(beginsynth) from date_ranges)
     "
   )
-  
+  # Note: when doing the addition of the offset_tsecs the date changes from being in 
+  # a 1-24 hour notation to a 0-23 hour notation. why does this happen? both dates 
+  # are generated with the datetime function, though the first explicitly states 1-24 hours
+  # since that is how it comes in to the routine from the NLDAS/CBP dataset
+  # peraps it prefers this other method?
+  # even simply adding a zero second offset changes the notation from 1-24 to 0-23
+  #   Ex: sqldf("select datetime(thisdate, '+0 seconds') from real_ts limit 35")
   append_ts <- sqldf(
     "select a.year, a.month, a.day, a.hour, 
    datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) as thisdate, tsvalue
-   from base_ts as a 
+   from real_ts as a 
    left outer join date_ranges as b 
    on (1 = 1) 
-   where a.thisdate >= b.startdate2 
-     and datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) <= b.enddate2
+   where a.thisdate >= b.start_source_date 
+     and datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) < b.endsynth
    "
   )
+  # this uses a 24 hour format. restoring the number scheme but not necessarily a contiguous date range.
   append_ts$year <- as.integer(format(as.Date(append_ts$thisdate,tz="UTC"), format='%Y'))
   append_ts$month <- as.integer(format(as.Date(append_ts$thisdate,tz="UTC"), format='%m'))
   append_ts$day <- as.integer(format(as.Date(append_ts$thisdate,tz="UTC"), format='%d'))
   append_ts$hour <- as.integer(format(as.POSIXct(append_ts$thisdate,tz="UTC"), format='%H')) + 1
+  # this was explored, but the date function in sqlite used the 0-23 scheme
+  #append_ts <- sqldf(
+  #  "
+  #    select thisdate,
+  #      cast(strftime('%Y', thisdate) as integer) as year, 
+  #      cast(strftime('%m', thisdate) as integer) as month, 
+  #      cast(strftime('%d', thisdate) as integer) as day, 
+  #      cast(strftime('%H', thisdate) as integer) as hour,
+  #      tsvalue
+  #    from append_ts
+  #  "
+  #)
   
-  new_ts <- rbind(base_ts, append_ts)
+  new_ts <- rbind(real_ts, append_ts)
   
   # Note: must use UNION ALL syntax here as UNION eliinates duplicates which runs afoul of DST stuff likely
   mash_ts <- sqldf(
     "
   select * from (
-    select a.year, a.month, a.day, a.hour, a.tsvalue from base_ts as a 
-      where a.thisdate < (select max(next_date) from date_ranges)
+    select a.year, a.month, a.day, a.hour, a.tsvalue from real_ts as a 
     UNION ALL select year, month, day, hour, tsvalue from append_ts
   ) as foo
   order by year, month, day, hour
