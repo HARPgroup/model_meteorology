@@ -191,7 +191,7 @@ make_single_synts_test <- function(base_ts, startdate1, enddate1, startdate2, en
   date_ranges = as.data.frame(list(startdate1 = startdate1, enddate1 = enddate1, startdate2 = startdate2, enddate1 = enddate1, enddate2 = enddate2))
   date_ranges <- sqldf(
     "
-   SELECT datetime(enddate1) as last_real, datetime(startdate2) as startdate2, datetime(enddate2) as enddate2, 
+   SELECT datetime(enddate1) as last_real, datetime(startdate2) as startdate2, datetime(enddate2, '+23 hours') as enddate2, 
       datetime(unixepoch(startdate2) + (unixepoch(enddate1) - unixepoch(startdate2) + 3600 ), 'unixepoch')  as next_date, 
       (unixepoch(startdate2) - unixepoch(enddate1))  as extra_secs, 
       (unixepoch(enddate1) - unixepoch(startdate2) ) as offset_tsecs ,
@@ -215,7 +215,7 @@ make_single_synts_test <- function(base_ts, startdate1, enddate1, startdate2, en
     "
   )
   
-  mash_ts <- sqldf(
+  append_ts <- sqldf(
     "select a.year, a.month, a.day, a.hour, 
    datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) as thisdate, tsvalue
    from base_ts as a 
@@ -225,19 +225,20 @@ make_single_synts_test <- function(base_ts, startdate1, enddate1, startdate2, en
      and datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) <= b.enddate2
    "
   )
-  mash_ts$year <- as.integer(format(as.Date(mash_ts$thisdate,tz="UTC"), format='%Y'))
-  mash_ts$month <- as.integer(format(as.Date(mash_ts$thisdate,tz="UTC"), format='%m'))
-  mash_ts$day <- as.integer(format(as.Date(mash_ts$thisdate,tz="UTC"), format='%d'))
-  mash_ts$hour <- as.integer(format(as.POSIXct(mash_ts$thisdate,tz="UTC"), format='%H')) + 1
+  append_ts$year <- as.integer(format(as.Date(append_ts$thisdate,tz="UTC"), format='%Y'))
+  append_ts$month <- as.integer(format(as.Date(append_ts$thisdate,tz="UTC"), format='%m'))
+  append_ts$day <- as.integer(format(as.Date(append_ts$thisdate,tz="UTC"), format='%d'))
+  append_ts$hour <- as.integer(format(as.POSIXct(append_ts$thisdate,tz="UTC"), format='%H')) + 1
   
-  new_ts <- rbind(base_ts, mash_ts)
+  new_ts <- rbind(base_ts, append_ts)
   
+  # Note: must use UNION ALL syntax here as UNION eliinates duplicates which runs afoul of DST stuff likely
   mash_ts <- sqldf(
     "
   select * from (
     select a.year, a.month, a.day, a.hour, a.tsvalue from base_ts as a 
-      where a.thisdate < (select max(startdate2) from date_ranges)
-    UNION select year, month, day, hour, tsvalue from mash_ts
+      where a.thisdate < (select max(next_date) from date_ranges)
+    UNION ALL select year, month, day, hour, tsvalue from append_ts
   ) as foo
   order by year, month, day, hour
   "
