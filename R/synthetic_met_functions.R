@@ -146,7 +146,7 @@ make_single_synts <- function(base_ts, startdate1, beginsynth, start_source_date
   # which is really a bug I think in the way sqldf handles the comparison? 
   date_ranges <- sqldf(
     "
-   SELECT datetime(start_source_date, '-1 hours') as start_source_date, datetime(endsynth, '+24 hours') as endsynth, 
+   SELECT datetime(start_source_date) as start_source_date, datetime(endsynth, '+24 hours') as endsynth, 
       datetime(beginsynth)  as beginsynth, 
       (unixepoch(beginsynth) - unixepoch(start_source_date) ) as offset_tsecs 
     from date_ranges 
