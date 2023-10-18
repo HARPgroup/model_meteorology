@@ -21,6 +21,12 @@ landseg = argst[1]
 dataset = argst[2]
 landseg_ftype = argst[3]
 model_version_code = argst[4]
+if (length(argst) > 4) {
+  # store as a run scenario?
+  as_scen = argst[5]
+} else {
+  as_scen = 0
+}
 # setup output if not existing
 outdir <- paste0(nldas_root,"/out/lseg_csv/",dataset,"/images/")
 outurl <- paste0(ext_url_base,"/met/out/lseg_csv/",dataset,"/images/")
@@ -28,7 +34,7 @@ if (!file.exists(outdir)) {
   dir.create(outdir)
 }
 
-nldas_dataset <- nldas_feature_dataset_prop(ds, landseg, 'landunit', landseg_ftype, model_version_code, dataset)
+nldas_dataset <- nldas_feature_dataset_prop(ds, landseg, 'landunit', landseg_ftype, model_version_code, dataset, as_scen)
 
 # 
 #loading table 
