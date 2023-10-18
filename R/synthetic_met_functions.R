@@ -180,7 +180,7 @@ make_single_synts <- function(base_ts, startdate1, beginsynth, start_source_date
    from real_ts as a 
    left outer join date_ranges as b 
    on (1 = 1) 
-   where a.thisdate >= b.start_source_date 
+   where datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) >= b.beginsynth
      and datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) < b.endsynth
    "
   )
