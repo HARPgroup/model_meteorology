@@ -28,14 +28,14 @@ landseg <- as.character(argst[1])
 startdate1 <- as.character(argst[2])
 enddate1 <- as.character(argst[3])
 startdate2 <- as.character(argst[4])
-enddate2 <- as.character(argst[5])
+enddate2 <- paste(as.character(argst[5])
 if (length(argst) >= 6) {
   in_dir <- as.character(argst[6]) 
 }
 if (length(argst) >= 7) {
   out_dir <- as.character(argst[7]) 
 }
-method <- 1
+method <- 2 # default to new way
 if (length(argst) >= 8) {
   method <- as.integer(argst[8]) 
 }

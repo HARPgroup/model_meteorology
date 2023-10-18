@@ -189,6 +189,7 @@ make_single_synts_test <- function(base_ts, startdate1, enddate1, startdate2, en
   # uses strict numerical addition to create synthetic date range, then uses sqlite (or other sqldf engine)
   # to make the new timestamp which should handle leaps, DST etc without incident.
   date_ranges = as.data.frame(list(startdate1 = startdate1, enddate1 = enddate1, startdate2 = startdate2, enddate1 = enddate1, enddate2 = enddate2))
+  # the addition of the 23 hours to the end insures that the date converts to a timestamp ending on that day at midnite 
   date_ranges <- sqldf(
     "
    SELECT datetime(enddate1) as last_real, datetime(startdate2) as startdate2, datetime(enddate2, '+23 hours') as enddate2, 
