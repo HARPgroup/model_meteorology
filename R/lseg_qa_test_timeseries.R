@@ -20,11 +20,14 @@ ds <- RomDataSource$new(site, rest_uname)
 ds$get_token(rest_pw)
 
 # load lseg_functions
-nldas_url_path = "/met/out/lseg_csv"
-nldas_site <- paste0(omsite,nldas_url_path) # temporary cloud url
-nldas_dir <- "/backup/meteorology/" # directory where met data is stored
-outdir=Sys.getenv(c('NLDAS_ROOT'))[1]
+nldas_site <- paste0(omsite,"/met/out/lseg_csv") # temporary cloud url
+nldas_root=Sys.getenv(c('NLDAS_ROOT'))[1]
+if(is.empty(nldas_root)) {
+  message("Can not locate env variable NLDAS_ROOT. Please set and tryagain (or run hspf_config to set)")
+  quit()
+}
 #source(paste(github_location,"HARParchive/HARP-2021-2022","lseg_functions.R", sep = "/"))
+source(paste0(nldas_root, "/R/nldas_feature_dataset_prop.R"))
 
 argst <- commandArgs(trailingOnly = T)
 if (length(argst) < 4) {
@@ -37,6 +40,12 @@ landseg = argst[1]
 dataset = argst[2]
 landseg_ftype = argst[3]
 model_version_code = argst[4]
+if (length(argst) > 4) {
+  # store as a run scenario?
+  as_scen = argst[5]
+} else {
+  as_scen = 0
+}
 
 # Variable names
 om_con <- 'om_class_Constant'
@@ -47,61 +56,11 @@ i <- 1
 
 print(paste0("current landsegment: ", landseg))
 
-# read in a model container
-lseg_feature <- RomFeature$new(
-  ds, list(
-    ftype = landseg_ftype,
-    bundle = 'landunit',
-    hydrocode = landseg
-  ),
-  TRUE
-)
-if (!(lseg_feature$hydroid > 0)) {
-  message(paste("Could not find", landseg))
-  next
-}
-lseg_model <- RomProperty$new(
-  ds, list(
-    featureid = lseg_feature$hydroid,
-    propcode = model_version_code,
-    propname = paste(lseg_feature$name, model_version_code),
-    varkey = 'om_model_element',
-    entity_type = 'dh_feature'
-  ),
-  TRUE
-)
-if (is.na(lseg_model$pid)) {
-  message(paste("Could not find mode for", landseg, ", creating."))
-  lseg_model$save(TRUE)
-}
-nldas_datasets <- RomProperty$new(
-  ds, list(
-    featureid = lseg_model$pid,
-    propname = 'nldas_datasets',
-    entity_type = 'dh_properties'
-  ),
-  TRUE
-)
-if (is.na(nldas_datasets$pid)) {
-  message(paste("Could not find NLDAS datasets for", landseg, ", creating."))
-  nldas_datasets$save(TRUE)
-}
-nldas_data <- RomProperty$new(
-  ds, list(
-    featureid = nldas_datasets$pid,
-    propname = dataset,
-    entity_type = 'dh_properties'
-  ),
-  TRUE
-)
-if (is.na(nldas_data$pid)) {
-  message(paste("Could not find NLDAS", dataset, ", creating."))
-  nldas_data$save(TRUE)
-}
+# get/set a model for this data 
+nldas_data <- nldas_feature_dataset_prop(ds, landseg, 'landunit', landseg_ftype, model_version_code, dataset, as_scen)
 
 # read in lseg_csv
 ts_file_url <- paste0(nldas_site,"/",dataset,"/",landseg,".PRC")
-ts_ext_file_url <- paste0(ext_url_base, nldas_url_path,"/",dataset,"/",landseg,".PRC")
 timeSeries <- fread(ts_file_url)
 names(timeSeries) <- c('year','month','day','hour','tsvalue')
 # code with correct input directory if running on deq machine
@@ -114,7 +73,7 @@ data_file <- RomProperty$new(
   ),
   TRUE
 )
-data_file$propcode <- ts_ext_file_url
+data_file$propcode <- ts_file_url
 data_file$save(TRUE)
 
 # line of code to help run even with incomplete lseg_csv

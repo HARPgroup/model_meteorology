@@ -1,4 +1,4 @@
-library(dplyr)
+suppressPackageStartupMessages(library(dplyr))
 site <- "http://deq1.bse.vt.edu:81/d.dh"  #Specify the site of interest, either d.bet OR d.dh
 basepath <- '/var/www/R';
 source(paste(basepath,'config.R',sep='/'))
@@ -16,7 +16,7 @@ dataset = argst[2]
 landseg_ftype = argst[3]
 model_version_code = argst[4]
 
-outdir <- paste0(nldas_root,"out/lseg_csv/",dataset,"/images/")
+outdir <- paste0(nldas_root,"/out/lseg_csv/",dataset,"/images/")
 if (!file.exists(outdir)) {
   dir.create(outdir)
 }
@@ -137,10 +137,10 @@ get_rolling_avgs_PET <- function(dfTMP, dfPRC, dfHET, dfHSET){
 }
 
 #reading in precip, pet, and temp data sets
-dfPRC <- read.table(paste0(nldas_root,"out/lseg_csv/",dataset,"/",landseg,".PRC"), header = FALSE, sep = ",")
-dfHET <- read.table(paste0(nldas_root,"out/lseg_csv/",dataset,"/",landseg,".HET"), header = FALSE, sep = ",")
-dfTMP <- read.table(paste0(nldas_root,"out/lseg_csv/",dataset,"/",landseg,".TMP"), header = FALSE, sep = ",")
-dfHSET <- read.table(paste0(nldas_root,"out/lseg_csv/",dataset,"/",landseg,".HSET"), header = FALSE, sep = ",")
+dfPRC <- read.table(paste0(nldas_root,"/out/lseg_csv/",dataset,"/",landseg,".PRC"), header = FALSE, sep = ",")
+dfHET <- read.table(paste0(nldas_root,"/out/lseg_csv/",dataset,"/",landseg,".HET"), header = FALSE, sep = ",")
+dfTMP <- read.table(paste0(nldas_root,"/out/lseg_csv/",dataset,"/",landseg,".TMP"), header = FALSE, sep = ",")
+dfHSET <- read.table(paste0(nldas_root,"/out/lseg_csv/",dataset,"/",landseg,".HSET"), header = FALSE, sep = ",")
 colnames(dfTMP) = c("year","month","day","hour","temp")
 dfTMP$date <- as.Date(paste(dfTMP$year,dfTMP$month,dfTMP$day, sep="-")) 
 colnames(dfHET) = c("year1","month1","day1","hour1","Hpet")
