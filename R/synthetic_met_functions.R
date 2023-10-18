@@ -142,7 +142,7 @@ make_single_synts <- function(base_ts, startdate1, enddate1, startdate2, enddate
   # the addition of the 23 hours to the end insures that the date converts to a timestamp ending on that day at midnite 
   date_ranges <- sqldf(
     "
-   SELECT datetime(enddate1) as last_real, datetime(startdate2) as startdate2, datetime(enddate2, '+23 hours') as enddate2, 
+   SELECT datetime(enddate1, '+23 hours') as last_real, datetime(startdate2) as startdate2, datetime(enddate2, '+23 hours') as enddate2, 
       datetime(unixepoch(startdate2) + (unixepoch(enddate1) - unixepoch(startdate2) + 3600 ), 'unixepoch')  as next_date, 
       (unixepoch(startdate2) - unixepoch(enddate1))  as extra_secs, 
       (unixepoch(enddate1) - unixepoch(startdate2) ) as offset_tsecs ,
