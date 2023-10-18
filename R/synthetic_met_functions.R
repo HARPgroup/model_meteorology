@@ -136,17 +136,19 @@ make_cbp_hours <- function(base_ts) {
 # do a single, flexible period adjustment
 # requires that data column is named tsvalue
 make_single_synts <- function(base_ts, startdate1, enddate1, startdate2, enddate2){
-  
+  # uses strict numerical addition to create synthetic date range, then uses sqlite (or other sqldf engine)
+  # to make the new timestamp which should handle leaps, DST etc without incident.
   date_ranges = as.data.frame(list(startdate1 = startdate1, enddate1 = enddate1, startdate2 = startdate2, enddate1 = enddate1, enddate2 = enddate2))
+  # the addition of the 23 hours to the end insures that the date converts to a timestamp ending on that day at midnite 
   date_ranges <- sqldf(
     "
-   SELECT datetime(enddate1) as last_real, datetime(startdate2) as startdate2, datetime(enddate2) as enddate2, 
+   SELECT datetime(enddate1) as last_real, datetime(startdate2) as startdate2, datetime(enddate2, '+23 hours') as enddate2, 
       datetime(unixepoch(startdate2) + (unixepoch(enddate1) - unixepoch(startdate2) + 3600 ), 'unixepoch')  as next_date, 
       (unixepoch(startdate2) - unixepoch(enddate1))  as extra_secs, 
-      (unixepoch(enddate1) - unixepoch(startdate2) + 86400 ) as offset_tsecs ,
+      (unixepoch(enddate1) - unixepoch(startdate2) ) as offset_tsecs ,
       unixepoch(enddate1) end1_ts, unixepoch(startdate2) as start2_ts
     from date_ranges 
-  "
+    "
   )
   
   base_ts <- sqldf(
@@ -157,7 +159,14 @@ make_single_synts <- function(base_ts, startdate1, enddate1, startdate2, enddate
    from base_ts as a 
   "
   )
-  mash_ts <- sqldf(
+  base_ts <- sqldf(
+    "
+     select * from base_ts as a 
+     where thisdate <= (select max(last_real) from date_ranges)
+    "
+  )
+  
+  append_ts <- sqldf(
     "select a.year, a.month, a.day, a.hour, 
    datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) as thisdate, tsvalue
    from base_ts as a 
@@ -167,23 +176,27 @@ make_single_synts <- function(base_ts, startdate1, enddate1, startdate2, enddate
      and datetime(a.thisdate, ('+' || b.offset_tsecs || ' seconds')) <= b.enddate2
    "
   )
-  mash_ts$year <- as.integer(format(as.Date(mash_ts$thisdate,tz="UTC"), format='%Y'))
-  mash_ts$month <- as.integer(format(as.Date(mash_ts$thisdate,tz="UTC"), format='%m'))
-  mash_ts$day <- as.integer(format(as.Date(mash_ts$thisdate,tz="UTC"), format='%d'))
-  mash_ts$hour <- as.integer(format(as.POSIXct(mash_ts$thisdate,tz="UTC"), format='%H'))
+  append_ts$year <- as.integer(format(as.Date(append_ts$thisdate,tz="UTC"), format='%Y'))
+  append_ts$month <- as.integer(format(as.Date(append_ts$thisdate,tz="UTC"), format='%m'))
+  append_ts$day <- as.integer(format(as.Date(append_ts$thisdate,tz="UTC"), format='%d'))
+  append_ts$hour <- as.integer(format(as.POSIXct(append_ts$thisdate,tz="UTC"), format='%H')) + 1
   
+  new_ts <- rbind(base_ts, append_ts)
   
+  # Note: must use UNION ALL syntax here as UNION eliinates duplicates which runs afoul of DST stuff likely
   mash_ts <- sqldf(
     "
-  select year, month, day, hour, tsvalue from (
-    select * from base_ts 
-    UNION select * from mash_ts
+  select * from (
+    select a.year, a.month, a.day, a.hour, a.tsvalue from base_ts as a 
+      where a.thisdate < (select max(next_date) from date_ranges)
+    UNION ALL select year, month, day, hour, tsvalue from append_ts
   ) as foo
   order by year, month, day, hour
   "
   )
   return(mash_ts)
 }
+
 
 make_single_synts_test <- function(base_ts, startdate1, enddate1, startdate2, enddate2){
   # uses strict numerical addition to create synthetic date range, then uses sqlite (or other sqldf engine)
