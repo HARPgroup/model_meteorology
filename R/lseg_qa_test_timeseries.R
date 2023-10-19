@@ -94,7 +94,7 @@ decount <- sqldf(
 )
 pcount <- sqldf("select count(*) as num_anom from timeSeries where tsvalue > 1.0")
 
-print(paste0(landseg, allcount, "values checked"))
+message(paste(landseg, allcount, "values checked"))
 
 data_status <- RomProperty$new(
   ds,
@@ -131,6 +131,33 @@ de_count <- RomProperty$new(
 )
 de_count$propvalue <- as.integer(decount)
 de_count$save(TRUE)
+# todo: put summary of years with errors/anomalies
+ydecount <- sqldf(
+  "select year, count(*) as num_anom 
+   from (
+     select year, month, day, sum(tsvalue) as tsvalue
+     from timeSeries 
+     group by year, month, day
+   ) as ts
+   where tsvalue > 20.0"
+)
+for (i in 1:nrow(ydecount)) {
+  dinfo <- ydecount[i,]
+  yde_rec <- RomProperty$new(
+    ds,
+    list(entity_type='dh_properties',propname=paste('year',dinfo$year),varkey=om_con,featureid=de_count$pid),
+    TRUE
+  )
+  yde_rec$propvalue <- as.integer(dinfo$num_anom)
+  yde_rec$save(TRUE)
+  yde_year <- RomProperty$new(
+    ds,
+    list(entity_type='dh_properties',propname='year',varkey=om_con,featureid=yde_rec$pid),
+    TRUE
+  )
+  yde_year$propvalue <- as.integer(dinfo$year)
+  yde_year$save(TRUE)
+}
 
 he_count <- RomProperty$new(
   ds,

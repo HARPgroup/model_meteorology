@@ -18,3 +18,5 @@ met_data <- om_vahydro_metric_grid(
   base_url = paste(site,'entity-model-prop-level-export',sep="/"),
   ds = ds
 )
+
+sqldf("select hydrocode from met_data where PRC_daily_error_count > 0")
