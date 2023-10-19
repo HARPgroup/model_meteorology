@@ -1,0 +1,51 @@
+#!/bin/bash
+
+echo 'Use: mash $i $symd $dappend $sappend $eappend $met_dataset $sdate $edate $model_dataset $model_subset $met_scen $prad_scen $lseg_ftype $model_version'
+
+i=$1
+symd=$2
+dappend=$3
+sappend=$4
+eappend=$5
+met_dataset=$6
+sdate=$7
+edate=$8
+model_dataset=$9
+model_subset=${10}
+met_scen=${11}
+prad_scen=${12}
+lseg_ftype=${13}
+model_version=${14}
+
+# do a mashup.  
+# Appends data for the remainder of calendar year onto end of observed met data
+# this is to eliminate limitation wdm_insert_ALL (called by wdm_pm_one)
+# also allows forecasting of what might be.
+# the final param is "method" 1 or 2:
+# - 1: Old method, do not try to fix leap years and/or DST (will break if source years are not same as dest years)
+# - 2: Fix time stamps by appending a series of dates using a unix timestamp addition method that produces reasonable dates
+#       this is not perfect, but gets us to where we want to be despite the input data set using the janky 1-24 hour format
+Rscript /opt/model/model_meteorology/R/mash.R $i $symd $dappend $sappend $eappend /backup/meteorology/out/lseg_csv/met2date /backup/meteorology/out/lseg_csv/${met_dataset} 2
+# Update RNMax
+LongTermAvgRNMax /backup/meteorology/out/lseg_csv/${met_dataset} /backup/meteorology/out/lseg_csv/RNMax 1 $i
+# - The HSPF input Cloud cover is a derived value from solar radiation, which finds the maximum value of RAD on each 
+#   day and hour of the year (so one value for all Sept 1, at 1:00pm) and assumes that if the value matches that CLD is zero
+#   otherwise the cloud cover is based on a fraction of the max potential RAD
+# - Using method 2 creates the potential for changes to max observed RAD due to date shifting, thus, we have to regen
+#  - Since there is only one RNMax file for all datasets this creates an artficial RNMax dataset, 
+#     but since all other data updates require regenerating RNMax the risk should be low, and low impact regardless.
+# Put into a WDM
+wdm_pm_one $i $sdate $edate $model_dataset $model_subset $met_scen $prad_scen $met_dataset overwrite
+
+# Run QA and Summary Steps for Land Segment Mash-Up
+Rscript /opt/model/model_meteorology/R/lseg_het.R $i $met_dataset
+Rscript /opt/model/model_meteorology/R/lseg_hset.R $i $met_dataset
+Rscript /opt/model/model_meteorology/R/Table_Rolling_Averages.R $i $met_dataset $lseg_ftype $model_version
+Rscript /opt/model/model_meteorology/R/lseg_rolling_avg_graphs.R $i $met_dataset $lseg_ftype $model_version
+echo "View at: http://deq1.bse.vt.edu:81/met/out/lseg_csv/$met_dataset/images/df.90day.precip_${i}.png"
+# Run QA
+echo "Calling: Rscript  /opt/model/model_meteorology/R/lseg_qa_test_timeseries.R $i $met_dataset $lseg_ftype $model_version"
+Rscript  /opt/model/model_meteorology/R/lseg_qa_test_timeseries.R $i $met_dataset $lseg_ftype $model_version
+# Run QA and graphs again, note the "1" as last argument, this is to save as a model scenario
+Rscript  /opt/model/model_meteorology/R/lseg_qa_test_timeseries.R $i $met_dataset $lseg_ftype $model_version 1
+Rscript /opt/model/model_meteorology/R/lseg_rolling_avg_graphs.R $i $met_dataset $lseg_ftype $model_version 1
