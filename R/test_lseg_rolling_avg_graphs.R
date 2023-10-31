@@ -1,6 +1,6 @@
 # variables to test lseg_rolling_avg_graphs.R
 nldas_root="https://raw.githubusercontent.com/HARPgroup/model_meteorology/main"
-landseg = "N24013"
+landseg = "L54071"
 dataset = "mash"
 landseg_ftype = "cbp6_landseg"
 model_version_code = "cbp-6.0"

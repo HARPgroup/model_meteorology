@@ -129,6 +129,10 @@ de_count <- RomProperty$new(
   list(entity_type='dh_properties',propname='PRC_daily_error_count',varkey=om_con,featureid=nldas_data$pid),
   TRUE
 )
+if (!is.na(de_count$pid)) {
+  # delete this so as not to save old years underneath of it
+  de_count$delete()
+}
 de_count$propvalue <- as.integer(decount)
 de_count$save(TRUE)
 # todo: put summary of years with errors/anomalies
