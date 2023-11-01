@@ -1,31 +1,46 @@
-dataset <- "mash"
-landseg <- "N51660"
-filename <- "/backup/meteorology/out/lseg_csv/mash/N51165.PRC"
+library(sqldf)
 
-nldas_dir <- "/backup/meteorology/out/lseg_csv" # directory where met data is stored
-nldas_dir <- "http://deq1.bse.vt.edu:81/met/out/lseg_csv" # directory where met data is stored
+nldas_root=Sys.getenv(c('NLDAS_ROOT'))[1]
+nldas_url_base <- paste0(ext_url_base,'/met/out/lseg_csv')
 
-filedir <- paste(nldas_dir, dataset, sep="/")
+argst <- commandArgs(trailingOnly = T)
+if (length(argst) < 2) {
+  message("Use: Rscript met_plots.R landseg dataset")
+  message("Ex: Rscript met_plots.R A51011 1984010100-2020123123")
+  quit()
+}
+
+landseg = argst[1]
+dataset = argst[2]
+landseg_ftype = argst[3]
+model_version_code = argst[4]
+
+filedir <- paste(nldas_root, dataset, sep="/")
 scales <- list("PRC"=3.0, "PET" = 0.25)
+nldas_data <- nldas_feature_dataset_prop(ds, landseg, 'landunit',landseg_ftype, 'object')
 
-filename <- "http://deq1.bse.vt.edu:81/met/out/lseg_csv/mash/N51165.PRC"
 for (comp in c('PRC', 'PET')) {
   filename <- paste(landseg,comp,sep=".")
   filepath <- paste(filedir,filename, sep="/")
   dat <- read.table(filepath, sep=",")
   names(dat) <- c("year", "month", "day", "hour", "tsvalue")
   # open the plot file
-  filename <- paste0(nldas_dir,"/",dataset,"/",landseg,"_rollingAVG_met.png")
+  dat <- sqldf("select year, month, day, sum(tsvalue) as tsvalue from dat group by year, month, day")
+  filename <- paste0(nldas_root,"/met/out/lseg_csv/",dataset,"/",landseg,"_rollingAVG_met.png")
   png(filename)
   # render the plot
   boxplot(as.numeric(dat$tsvalue) ~ dat$year, ylim=c(0,as.numeric(scales[comp]) ))
   dev.off()
-  fileurl <- paste0(nldas_url_base,"/",dataset,"/",landseg,"bw_", comp)
+  fileurl <- paste0(nldas_url_base,"/",dataset,"/",landseg,"_annual_", comp)
+  ydat <- sqldf("select year, min(tsvalue), max(tsvalue), sum(tsvalue) as tsvalue from dat group by year")
   message(paste("Saving image file to:", filename, "URL:", fileurl))
   img_file <- RomProperty$new(
     ds,
     list(
-      entity_type='dh_properties',propname='fig_rollingAVG_met',varkey=img_file,featureid=nldas_data$pid
+      entity_type='dh_properties',
+      propname=paste0('fig_annual_',comp),
+      varkey=img_file,
+      featureid=nldas_data$pid
     ),
     TRUE
   )
