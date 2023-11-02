@@ -29,7 +29,7 @@ outurl <- paste0(ext_url_base,"/met/out/lseg_csv/",dataset,"/images/")
 
 filedir <- paste(nldas_root,"out/lseg_csv", dataset, sep="/")
 scales <- list("PRC"=3.0, "PET" = 0.25)
-nldas_dataset <- nldas_feature_dataset_prop(ds, landseg, 'landunit', landseg_ftype, model_version_code, dataset, as_scen)
+nldas_dataset <- nldas_feature_dataset_prop(ds, landseg, 'landunit', landseg_ftype, model_version_code, dataset, 1)
 annual_details <- RomProperty$new(
   ds, 
   list(
