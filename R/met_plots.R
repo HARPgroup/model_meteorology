@@ -26,12 +26,36 @@ for (comp in c('PRC', 'PET')) {
   names(dat) <- c("year", "month", "day", "hour", "tsvalue")
   # open the plot file
   dat <- sqldf("select year, month, day, sum(tsvalue) as tsvalue from dat group by year, month, day")
-  filename <- paste0(nldas_root,"/met/out/lseg_csv/",dataset,"/",landseg,"_rollingAVG_met.png")
+  filename <- paste0(nldas_root,"/met/out/lseg_csv/",dataset,"/",landseg,"_annual_prc_quant.png")
   png(filename)
   # render the plot
   boxplot(as.numeric(dat$tsvalue) ~ dat$year, ylim=c(0,as.numeric(scales[comp]) ))
   dev.off()
-  fileurl <- paste0(nldas_url_base,"/",dataset,"/",landseg,"_annual_", comp)
+  fileurl <- paste0(nldas_url_base,"/",dataset,"/",landseg,"_annual_prc_quant", comp)
+  ydat <- sqldf("select year, min(tsvalue), max(tsvalue), sum(tsvalue) as tsvalue from dat group by year")
+  message(paste("Saving image file to:", filename, "URL:", fileurl))
+  img_file <- RomProperty$new(
+    ds,
+    list(
+      entity_type='dh_properties',
+      propname=paste0('fig_annual_prc_quant_',comp),
+      varkey=img_file,
+      featureid=nldas_data$pid
+    ),
+    TRUE
+  )
+  img_file$propcode <- fileurl
+  img_file$save(TRUE)
+  
+  # make a bar plot
+  
+  ydat <- sqldf("select year, sum(tsvalue) as tsvalue from dat group by year order by year")
+  filename <- paste0(nldas_root,"/met/out/lseg_csv/",dataset,"/",landseg,"_annual_sum_prc.png")
+  png(filename)
+  # render the plot
+  barplot(as.numeric(ydat$tsvalue) ~ ydat$year, ylim=c(0,as.numeric(scales[comp]) ))
+  dev.off()
+  fileurl <- paste0(nldas_url_base,"/",dataset,"/",landseg,"_annual_sum_prc.png", comp)
   ydat <- sqldf("select year, min(tsvalue), max(tsvalue), sum(tsvalue) as tsvalue from dat group by year")
   message(paste("Saving image file to:", filename, "URL:", fileurl))
   img_file <- RomProperty$new(
