@@ -114,7 +114,7 @@ for (comp in c('PRC', 'PET')) {
       ds,
       list(
         entity_type='dh_properties',
-        propname=paste0('fig_monthly_',comp,yr),
+        propname=paste0('fig_monthly_',comp),
         varkey = 'dh_image_file',
         featureid=thisyear$pid
       ),
