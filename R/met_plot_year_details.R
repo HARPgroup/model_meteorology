@@ -53,6 +53,23 @@ for (comp in c('PRC', 'PET')) {
   names(dat) <- c("year", "month", "day", "hour", "tsvalue")
   
   for (yr in years) {
+    # create a place to store
+    thisyear <- RomProperty$new(
+      ds, 
+      list(
+        propname=yr,
+        varkey="om_model_element", 
+        featureid=annual_details$pid, 
+        entity_type='dh_properties'
+      ),
+      TRUE
+    )
+    
+    if (is.na(thisyear$pid)) {
+      message(paste("Could not find",yr,"dataset creating."))
+      thisyear$save(TRUE)
+    }
+    
     # open the plot file
     yrdat <- sqldf(
       paste(
@@ -62,8 +79,8 @@ for (comp in c('PRC', 'PET')) {
         "group by year, month, day"
       )
     )
-    filename <- paste0(outdir,landseg,"_monthly_quant_", comp,".png")
-    fileurl <- paste0(outurl,landseg,"_monthly_quant_", comp, ".png")
+    filename <- paste0(outdir,landseg,"_monthly_quant_", comp,"_",yr,".png")
+    fileurl <- paste0(outurl,landseg,"_monthly_quant_", comp,"_",yr, ".png")
     png(filename)
     # render the plot
     boxplot(as.numeric(yrdat$tsvalue) ~ yrdat$month, ylim=c(0,as.numeric(scales[comp]) ))
@@ -75,7 +92,7 @@ for (comp in c('PRC', 'PET')) {
         entity_type='dh_properties',
         propname=paste0('fig_monthly_quant_',comp),
         varkey = 'dh_image_file',
-        featureid=annual_details$pid
+        featureid=thisyear$pid
       ),
       TRUE
     )
@@ -86,8 +103,8 @@ for (comp in c('PRC', 'PET')) {
     
     modat <- sqldf("select month, min(tsvalue), max(tsvalue), sum(tsvalue) as tsvalue from yrdat group by month order by month")
     ymax <- max(modat$tsvalue)
-    filename <- paste0(outdir,landseg,"_monthly_sum_", comp,".png")
-    fileurl <- paste0(outurl,landseg,"_monthly_sum_", comp, ".png")
+    filename <- paste0(outdir,landseg,"_monthly_sum_", comp,"_",yr,".png")
+    fileurl <- paste0(outurl,landseg,"_monthly_sum_", comp,"_",yr, ".png")
     png(filename)
     # render the plot
     barplot(as.numeric(modat$tsvalue) ~ modat$month, ylim=c(0,as.numeric(ymax) ))
@@ -97,9 +114,9 @@ for (comp in c('PRC', 'PET')) {
       ds,
       list(
         entity_type='dh_properties',
-        propname=paste0('fig_annual_',comp),
+        propname=paste0('fig_monthly_',comp,yr),
         varkey = 'dh_image_file',
-        featureid=annual_details$pid
+        featureid=thisyear$pid
       ),
       TRUE
     )
