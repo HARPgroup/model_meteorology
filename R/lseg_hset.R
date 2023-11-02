@@ -4,7 +4,7 @@ suppressPackageStartupMessages(library(lubridate))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(sqldf))
 # load lseg_functions
-source(paste(github_location,"HARParchive/HARP-2021-2022","lseg_functions.R", sep = "/"))
+source("/opt/model/model_meteorology/R/lseg_functions.R")
 
 nldas_root=Sys.getenv(c('NLDAS_ROOT'))[1]
 source(paste0(nldas_root,"/R/nldas_feature_dataset_prop.R"))
