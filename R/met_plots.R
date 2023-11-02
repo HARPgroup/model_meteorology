@@ -55,7 +55,7 @@ for (comp in c('PRC', 'PET')) {
     list(
       entity_type='dh_properties',
       propname=paste0('fig_annual_quant_',comp),
-      varkey=img_file,
+      varkey = 'dh_image_file',
       featureid=nldas_data$pid
     ),
     TRUE
