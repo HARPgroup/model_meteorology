@@ -22,7 +22,7 @@ landseg = argst[1]
 dataset = argst[2]
 landseg_ftype = argst[3]
 model_version_code = argst[4]
-years = strsplit(argst[5], ",")
+years = unlist(strsplit(argst[5], ","))
 
 outdir <- paste0(nldas_root,"/out/lseg_csv/",dataset,"/images/")
 outurl <- paste0(ext_url_base,"/met/out/lseg_csv/",dataset,"/images/")
