@@ -66,11 +66,12 @@ for (comp in c('PRC', 'PET')) {
   # make a bar plot
   
   ydat <- sqldf("select year, min(tsvalue), max(tsvalue), sum(tsvalue) as tsvalue from dat group by year order by year")
+  ymax <- max(ydat$tsvalue)
   filename <- paste0(outdir,landseg,"_annual_sum_", comp,".png")
   fileurl <- paste0(outurl,landseg,"_annual_sum_", comp, ".png")
   png(filename)
   # render the plot
-  barplot(as.numeric(ydat$tsvalue) ~ ydat$year, ylim=c(0,as.numeric(scales[comp]) ))
+  barplot(as.numeric(ydat$tsvalue) ~ ydat$year, ylim=c(0,as.numeric(ymax) ))
   dev.off()
   message(paste("Saving image file to:", filename, "URL:", fileurl))
   img_file <- RomProperty$new(
