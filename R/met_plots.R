@@ -79,7 +79,7 @@ for (comp in c('PRC', 'PET')) {
       entity_type='dh_properties',
       propname=paste0('fig_annual_',comp),
       varkey = 'dh_image_file',
-      featureid=nldas_datasetset$pid
+      featureid=nldas_dataset$pid
     ),
     TRUE
   )

@@ -19,4 +19,5 @@ met_data <- om_vahydro_metric_grid(
   ds = ds
 )
 
-sqldf("select hydrocode from met_data where PRC_daily_error_count > 0")
+reruns <- sqldf("select hydrocode from met_data where PRC_daily_error_count > 0")
+reruns
