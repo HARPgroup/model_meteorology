@@ -1,0 +1,20 @@
+#!/bin/bash
+
+. hspf_config
+if [ $# -eq 0 ]; then
+  echo "Use: summarize_met landseg met_dataset lseg_ftype model_version"
+  exit
+fi
+
+i=$1
+met_dataset=$2
+lseg_ftype=$3
+model_version=$4
+
+# Summary Steps for Land Segment met
+echo "Running summary data routines for segment $i met_dataset = $met_dataset"
+Rscript /opt/model/model_meteorology/R/lseg_het.R $i $met_dataset
+Rscript /opt/model/model_meteorology/R/lseg_hset.R $i $met_dataset
+Rscript /opt/model/model_meteorology/R/Table_Rolling_Averages.R $i $met_dataset $lseg_ftype $model_version
+Rscript /opt/model/model_meteorology/R/lseg_rolling_avg_graphs.R $i $met_dataset $lseg_ftype $model_version
+echo "View at: http://deq1.bse.vt.edu:81/met/out/lseg_csv/$met_dataset/images/df.90day.precip_${i}.png"

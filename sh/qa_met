@@ -1,0 +1,23 @@
+#!/bin/bash
+
+. hspf_config
+if [ $# -lt 4 ]; then
+  echo "Use: summarize_met landseg met_dataset lseg_ftype model_version detailed_qa_years[can be \"year1 year2 ...\"]"
+  exit
+fi
+
+i=$1
+met_dataset=$2
+lseg_ftype=$3
+model_version=$4
+detailed_qa_years=$5
+
+# Summary Steps for Land Segment met
+echo "Running QA routines for segment $i met_dataset = $met_dataset"
+Rscript  /opt/model/model_meteorology/R/lseg_qa_test_timeseries.R $i $met_dataset $lseg_ftype $model_version
+# Run QA and graphs again, note the "1" as last argument, this is to save as a model scenario
+Rscript  /opt/model/model_meteorology/R/lseg_qa_test_timeseries.R $i $met_dataset $lseg_ftype $model_version 1
+Rscript /opt/model/model_meteorology/R/lseg_rolling_avg_graphs.R $i $met_dataset $lseg_ftype $model_version 1
+Rscript /opt/model/model_meteorology/R/met_plots.R $i $met_dataset $lseg_ftype $model_version 1
+# do detailed QA for refresh years
+Rscript /opt/model/model_meteorology/R/met_plot_year_details.R $i met2date $lseg_ftype $model_version "$detailed_qa_years"

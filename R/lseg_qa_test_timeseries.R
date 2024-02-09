@@ -10,11 +10,12 @@
 basepath <- '/var/www/R';
 source(paste(basepath,'config.R',sep='/'))
 
-#suppressPackageStartupMessageslibrary(lubridate))
-##library(sqldf)
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(sqldf))
 #library(IHA)
 #library(zoo)
 suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(hydrotools))
 
 ds <- RomDataSource$new(site, rest_uname)
 ds$get_token(rest_pw)
@@ -131,7 +132,10 @@ de_count <- RomProperty$new(
 )
 if (!is.na(de_count$pid)) {
   # delete this so as not to save old years underneath of it
-  de_count$delete()
+  #de_count$delete()
+  # but we CAN'T cause we don't have a rest delete entity support yet
+  # so just warn the user that this needs to happen
+  message(paste("*** WARNING: User should delete the prior version of this property, with pid = ", de_count$pid, "in order to eliminate older QA counts"))
 }
 de_count$propvalue <- as.integer(decount)
 de_count$save(TRUE)

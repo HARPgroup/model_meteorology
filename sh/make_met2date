@@ -40,7 +40,7 @@ for i in $segs; do
       jday=`date -d "$edate" +%j`
       echo "jday final $jday"
       echo "Using requested end data as jday $edate"
-      data_end=`date -d "$data_start +$(( $jday ))days" +%Y%m%d`
+      data_end=`date -d "$data_start +$(( 10#$jday ))days" +%Y%m%d`
     else
       data_end="${yr}1231"
     fi
