@@ -1,7 +1,7 @@
 #!/bin/bash
 
 . hspf_config
-if [ $# -eq 0 ]; then
+if [ $# -lt 4 ]; then
   echo "Use: summarize_met landseg met_dataset lseg_ftype model_version"
   exit
 fi
