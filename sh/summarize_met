@@ -17,4 +17,4 @@ Rscript /opt/model/model_meteorology/R/lseg_het.R $i $met_dataset
 Rscript /opt/model/model_meteorology/R/lseg_hset.R $i $met_dataset
 Rscript /opt/model/model_meteorology/R/Table_Rolling_Averages.R $i $met_dataset $lseg_ftype $model_version
 Rscript /opt/model/model_meteorology/R/lseg_rolling_avg_graphs.R $i $met_dataset $lseg_ftype $model_version
-echo "View at: http://deq1.bse.vt.edu:81/met/out/lseg_csv/$met_dataset/images/df.90day.precip_${i}.png"
+echo "View at: http://deq1.bse.vt.edu:81/met/out/lseg_csv/$met_dataset/images/rolling.90day.precip_${i}.png"
