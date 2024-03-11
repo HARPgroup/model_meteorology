@@ -84,5 +84,7 @@ echo "$land_segment $data_source $version $pdname $sYear $eYear 1 1 1 1 1 1 1" |
 #echo "wdm files populated"
 
 mv "met_$land_segment.wdm" $CBP_ROOT/input/scenario/climate/met/$met_scen/
+echo "Moved met_$land_segment.wdm to $CBP_ROOT/input/scenario/climate/met/$met_scen/"
 mv "prad_$land_segment.wdm" $CBP_ROOT/input/scenario/climate/prad/$prad_scen/
+echo "Moved prad_$land_segment.wdm to $CBP_ROOT/input/scenario/climate/prad/$prad_scen/"
 rm message.wdm

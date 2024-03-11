@@ -83,6 +83,25 @@ data_file$save(TRUE)
 # loops iterates through to check for abnormally values 
 j <- 1
 allcount <- sqldf("select count(*) as num_anom from timeSeries")
+ann_dat <- sqldf(
+  paste("
+    select year, round(max(tsvalue),2) as maxp, round(sum(tsvalue),2) as sump, count(*)/24 as days 
+    from timeSeries
+    group by year
+  ")
+)
+ann_sum <- sqldf(
+  "select max(sump), avg(sump), min(sump) 
+   from ann_dat
+   where days >= 365 
+  "
+)
+max_ann <- ann_sum$max
+mean_ann <- ann_sum$avg
+min_ann <- ann_sum$min
+min_year <- as.integer(sqldf(paste("select year from ann_dat where sump =", min_ann)))
+max_year <- as.integer(sqldf(paste("select year from ann_dat where sump =", max_ann)))
+
 hecount <- sqldf("select count(*) as num_anom from timeSeries where tsvalue > 4.0")
 decount <- sqldf(
   "select count(*) as num_anom 
@@ -124,6 +143,43 @@ data_count <- RomProperty$new(
 )
 data_count$propvalue <- as.integer(allcount)
 data_count$save(TRUE)
+
+data_max <- RomProperty$new(
+  ds,
+  list(entity_type='dh_properties',propname='precip_annual_max_in',varkey=om_con,featureid=nldas_data$pid),
+  TRUE
+)
+data_max$propvalue <- as.numeric(max_ann)
+data_max$save(TRUE)
+data_mean <- RomProperty$new(
+  ds,
+  list(entity_type='dh_properties',propname='precip_annual_mean_in',varkey=om_con,featureid=nldas_data$pid),
+  TRUE
+)
+data_mean$propvalue <- as.numeric(mean_ann)
+data_mean$save(TRUE)
+data_min <- RomProperty$new(
+  ds,
+  list(entity_type='dh_properties',propname='precip_annual_min_in',varkey=om_con,featureid=nldas_data$pid),
+  TRUE
+)
+data_min$propvalue <- as.numeric(min_ann)
+data_min$save(TRUE)
+data_min_yr <- RomProperty$new(
+  ds,
+  list(entity_type='dh_properties',propname='precip_annual_min_year',varkey=om_con,featureid=nldas_data$pid),
+  TRUE
+)
+data_min_yr$propvalue <- as.numeric(min_year)
+data_min_yr$save(TRUE)
+data_max_yr <- RomProperty$new(
+  ds,
+  list(entity_type='dh_properties',propname='precip_annual_max_year',varkey=om_con,featureid=nldas_data$pid),
+  TRUE
+)
+data_max_yr$propvalue <- as.numeric(max_year)
+data_max_yr$save(TRUE)
+
 
 de_count <- RomProperty$new(
   ds,

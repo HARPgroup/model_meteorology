@@ -1,0 +1,17 @@
+#!/bin/bash
+# combines summarize_met and qa_met scripts into one sequentil run
+. hspf_config
+if [ $# -lt 4 ]; then
+  echo "Use: sqa_met landseg met_dataset lseg_ftype model_version detailed_qa_years[can be \"year1 year2 ...\"]"
+  exit
+fi
+
+i=$1
+met_dataset=$2
+lseg_ftype=$3
+model_version=$4
+detailed_qa_years=$5
+
+# Summary Steps for Land Segment met
+./summarize_met $i $met_dataset $lseg_ftype $model_version
+./qa_met $i $met_dataset $lseg_ftype $model_version "$detailed_qa_years"
