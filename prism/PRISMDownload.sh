@@ -86,7 +86,7 @@ for i in {0..11}
 		gdalwarp -cutline $maskExtent -crop_to_cutline PRISM-conus-4326.bil PRISM-CBP-4326-$YYYY$MM$DD.bil
 		
 		#Create sql file that will add the raster (-a for amend) into the target table
-		raster2pgsql -a -t 1000x1000 PRISM-CBP-4326-$YYYY$MM$DD.bil tmp_prism > tmp_prism-test.sql
+		raster2pgsql -d -t 1000x1000 PRISM-CBP-4326-$YYYY$MM$DD.bil tmp_prism > tmp_prism-test.sql
 		
 		#Execute sql file to bring rasters into database (alpha)
 		psql -h dbase2 -f "tmp_prism-test.sql" -d drupal.alpha
@@ -128,5 +128,5 @@ for i in {0..11}
 done
 
 #To do:
-#Add code to drop temporary tables to ensure reset
 #Use dh_update_timeseries_weather to update the timeseries table with the values array above
+#Create varkey
