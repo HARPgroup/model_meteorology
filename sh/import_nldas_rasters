@@ -1,0 +1,30 @@
+#!/bin/bash
+yr=$1
+if [ $# -lt 1 ]; then
+  echo "Usage: import_nldas_rasters year [start jday = 1] [ending jday=start jday, all=last doy]"
+  exit
+fi
+
+# guess default day till as todays Julian day
+start_day=1
+day_till=$start_day # default to single day
+if [ $# -gt 1 ]; then
+  start_day=$2
+  start_day=$(($start_day + 0)) # make it an int
+fi
+if [ $# -gt 2 ]; then
+  day_till=$3
+fi
+if [ "$day_till" == 'all' ]; then
+  day_till=`date -d "${yr}-12-31" +%j`
+fi
+echo "Trying to retrieve NLDAS data from $start_day till day $day_till of year $yr"
+
+while [ $start_day -le $day_till ]; do
+  f_day=`printf "%03d" $start_day`
+  echo "get_nldas_data.bash $yr $f_day $yr"
+  thisdate=`date -d "${yr}-01-01 +$(( ${start_day} -1 ))days" +%Y-%m-%d`
+  echo "./nldas_raster2postgresql $thisdate all"
+  ./nldas_raster2postgresql $thisdate all
+  start_day=$(($start_day + 1))
+done
