@@ -76,14 +76,15 @@ for i in {0..11}
 		#Add row to database via the output text file:
 		psql -h dbase2 -f "insertWeatherRow.sql" -d drupal.alpha #WE NEED TO GET THE TID ASSOCIATED WITH THIS INSERT
 		#tid=VALUE FROM ABOVE!
+
 		
 		#Based on information from the raster, projection comes in at EPSG 6269
 		#So, we will need to reproject to 4326
-		#gdalinfo gdalinfo PRISM_ppt_stable_4kmD2_20090407_bil.bil
-		gdalwarp PRISM_ppt_stable_4kmD2_$YYYY$MM$DD_bil.bil -t_srs EPSG:4326 "PRISM-conus-4326-$YYYY$MM$DD.bil"
+		#gdalinfo gdalinfo RISM_ppt_stable_4kmD2_${YYYY}${MM}${DD}_bil.bil
+		gdalwarp PRISM_ppt_stable_4kmD2_${YYYY}${MM}${DD}_bil.bil -t_srs EPSG:4326 -of "gtiff" "PRISM-conus-4326-${YYYY}${MM}${DD}.gtiff"
 		
 		#Clipping the raster: Use gdalwarp to crop to the cutline maskExtent.csv, which is a csv of the CBP regions 
-		gdalwarp -cutline $maskExtent -crop_to_cutline PRISM-conus-4326.bil PRISM-CBP-4326-$YYYY$MM$DD.bil
+		gdalwarp -cutline $maskExtent -crop_to_cutline PRISM-conus-4326-${YYYY}${MM}${DD}.gtiff PRISM-CBP-4326-${YYYY}${MM}${DD}.gtiff
 		
 		#Create sql file that will add the raster (-a for amend) into the target table
 		raster2pgsql -d -t 1000x1000 PRISM-CBP-4326-$YYYY$MM$DD.bil tmp_prism > tmp_prism-test.sql
