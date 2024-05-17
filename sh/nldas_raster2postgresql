@@ -1,0 +1,62 @@
+#!/bin/bash
+if [ "$#" -lt 1 ];then
+  echo "Use: nldas_raster2postgresql [date YYYY-MM-DD] [hrs default='all' can be space delim list i.e. '0 1 2'] [coverage_hydrocode def=cbp6_met_coverage] [mask wkt file def='/backup/meteorology/cbp_extent.csv'"
+  exit
+fi
+
+thisdate=$1
+if [ "$#" -gt 1 ];then
+  hrs=$2
+fi
+coverage_hydrocode='cbp6_met_coverage'
+if [ "$#" -gt 2 ];then
+  coverage_hydrocode=$3
+fi
+maskExtent='/backup/meteorology/cbp_extent.csv'
+if [ "$#" -gt 3 ];then
+  maskExtent=$4
+fi
+# load context
+. hspf_config
+
+yr=`date -d "$thisdate" +%Y`
+mo=`date -d "$thisdate" +%m`
+da=`date -d "$thisdate" +%d`
+jday=`date -d "$thisdate" +%j`
+ymd="$yr$mo$da"
+if [ "$hrs" == "all" ]; then
+  hrs="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23"
+fi
+echo "Handling NLDAS2 raster for $thisdate, julian day $jday, hours=$hrs"
+for i in $hrs; do 
+   hr2digit=`printf %02d $i`
+   hr4digit="${hr2digit}00"
+   fname="$NLDAS_ROOT/$yr/$jday/NLDAS_FORA0125_H.A${ymd}.${hr4digit}.002.grb"
+   tifname="${fname}-4326.tif"
+   tifname_clip="/tmp/nldas2_clip.tif"
+   tstime=`TZ="America/New_York" date -d "$thisdate ${hr2digit}:00:00" +'%s'`
+   # Reproject to 4326
+   #gdalinfo gdalinfo PRISM_ppt_stable_4kmD2_20090407_bil.bil
+   gdalwarp "$fname" -t_srs EPSG:4326 "$tifname"
+   rm /tmp/nldas2_clip.tif
+   #Clipping the raster: Use gdalwarp to crop to the cutline maskExtent.csv, which is a csv of the CBP regions 
+   gdalwarp -cutline $maskExtent -crop_to_cutline $tifname $tifname_clip
+  # create
+  # use -a to append, use -t and it try to drop an existing table then will create the table anew
+   raster2pgsql -d -t 1000x1000 $tifname_clip tmp_nldas2 > /tmp/tmp_nldas2.sql
+   # import this raster into a temp table
+   cat /tmp/tmp_nldas2.sql | psql -h dbase2 drupal.dh03 
+   # now insert the raster into the timeseries table, with feature and variable information linked
+   inquery="insert into dh_timeseries_weather(tstime, varid, featureid, entity_type, rast)"
+   inquery="$inquery select '$tstime', v.hydroid as varid, f.hydroid as featureid, 'dh_feature', met.rast"
+   inquery="$inquery from dh_feature as f "
+   inquery="$inquery left outer join dh_variabledefinition as v"
+   inquery="$inquery on (v.varkey = 'nldas2_obs_hourly')"
+   inquery="$inquery left outer join dh_timeseries_weather as w"
+   inquery="$inquery on (f.hydroid = w.featureid and w.tstime = '${tstime}' and w.varid = v.hydroid) "
+   inquery="$inquery left outer join tmp_nldas2 as met"
+   inquery="$inquery on (1 = 1)"
+   inquery="$inquery WHERE w.tid is null"
+   inquery="$inquery AND f.hydrocode = '$coverage_hydrocode' "
+   echo $inquery |psql -h dbase2 drupal.dh03
+done
