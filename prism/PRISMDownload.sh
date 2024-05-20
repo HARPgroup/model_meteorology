@@ -3,7 +3,7 @@
 #The first user input should be the year at which to download all daily PRISM data
 YYYY=$1
 
-#The second input is the extent (a vector mask) by which the imported precip rasters should be clipped
+#The second input is the extent (a vector mask) by which the imported precip rasters should be clipped. This may be a file path to a WKT csv files, for instance.
 maskExtent=$2
 
 #Update the variable definition table. Only needs to be performed once to ensure PRISM data has a reference varkey and other data:
@@ -23,12 +23,6 @@ declare -A config=(
    ["extent_ftype"]="cbp_met_grid"
    ["extent_bundle"]="landunit"
 )
-
-#Get the coverage feature associated with this kind of raster time series
-#$extent_hydroid = dh_search_feature($config['extent_hydrocode'], $config['extent_bundle'], $config['extent_ftype']);
-
-#Convert today's date into our unified format for import into database
-# $date_ts = dh_handletimestamp($config['date'])
 
 #Now, download a raster for each day of each month from the PRISM webpage
 for MM in {1..12}
