@@ -21,6 +21,7 @@ declare -A config=(
    ["ext"]="_CBP.gtiff"
    ["scratchdir"]="/tmp"
    ["dataset"]="daymet_precip_"
+   ["datasource"]="daymet"
    ["varkey"]="daymet_precip_raster"
    ["extent_hydrocode"]="cbp6_met_coverage"
    ["extent_ftype"]="cbp_met_grid"
@@ -57,6 +58,9 @@ echo $YYYY
 	for par in $var; do
 	echo $par
 		
+		#Output file named. This will be the raster cropped to maskExtent and reprojected in EPSG:4326
+		finalTiff=${config["dataset"]}${YYYY}${MM}${DD}${config["ext"]}
+		
 		#Evaluate if the year is a leap year. daymet uses 365 day years and on leap years December 31st will be missing:
 		#Evaluate if $YYYY is a leap year e.g. either divisible by 4 or 400, but not 100 inherently. 
 		#Below, we use the -d option to coerce date to get the maximum day available in each month of 
@@ -69,6 +73,40 @@ echo $YYYY
 			#For non-leap years, query january 1st through december 31st
 			wget -O ${par}_${YYYY}subset.nc "https://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/2129/daymet_v4_daily_${region}_${par}_${YYYY}.nc?var=lat&var=lon&var=${par}&north=${north}&west=${west}&east=${east}&south=${south}&horizStride=1&time_start=${YYYY}-01-01T12:00:00Z&time_end=${YYYY}-12-31T12:00:00Z&timeStride=1&accept=netcdf"
 		fi
+		
+		#Based on information from the raster, projection comes in at EPSG 6269
+		#So, we will need to reproject to 4326
+		#gdalinfo gdalinfo RISM_ppt_stable_4kmD2_${YYYY}${MM}${DD}_bil.bil
+		gdalwarp NETCDF:"prcp_2014subset.nc":prcp -t_srs EPSG:4326 -of "gtiff" "${config["datasource"]}-${par}-${YYYY}.gtiff"
+		
+		#Clipping the raster: Use gdalwarp to crop to the cutline maskExtent.csv, which is a csv of the CBP regions 
+		gdalwarp -of "gtiff" -cutline $maskExtent -crop_to_cutline ${config["datasource"]}-${par}-${YYYY}.gtiff $finalTiff
+		
+		#To Add to the database, one of the following should work. We may need to modify to give more specific name if we import
+		#using the addRasterToDBase2. We'd also need to specify the end date for addRasterToDBase2
+		
+		
+		#Add the raster to the database.
+		#source addRasterToDBase2.sh
+		#addRasterToDBase2 "$YYYY-$MM-$DD 00" config $finalTiff 86400
+		
+		
+		
+		#################TESTING
+		#Get a representative numeric value of the date to be compatible with VAHydro data, specifying a compatible timezone and getting the date in seconds
+		tstime=`TZ="America/New_York" date -d "$YYYY-$MM-$DD 00:00:00" +'%s'`
+		tsendtime=$(( $tstime+86400 ))
+		
+		#Create sql file that will add the raster (-a for amend or -d for drop and recreate) into the target table
+		#The -t option tiles the raster for easier loading
+		raster2pgsql -d -t 1000x1000 $finalTiff tmp_${config["datasource"]} > tmp_${config["datasource"]}-test.sql
+		
+		#Execute sql file to bring rasters into database (alpha)
+		psql -h dbase2 -f "tmp_${config["datasource"]}-test.sql" -d drupal.alpha
+		
+		
+		########################
+		
 	done;
 done
 
