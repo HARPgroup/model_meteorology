@@ -32,8 +32,11 @@ declare -A config=(
 )
 
 #Now, download a raster for each day of each month from the PRISM webpage
-for MM in {1..12}
+for monthIt in {1..12}
 	do
+	
+	#Ensure the month is of two digit format
+	printf -v MM "%02d" $monthIt
 	
 	echo "Getting data for month ${MM}..."
 	#Evaluate if $YYYY is a leap year e.g. either divisible by 4 or 400, but not 100 inherently. 
@@ -42,8 +45,10 @@ for MM in {1..12}
 	#e.g. the $y/$m/1 sets the date initially to the date $m/01/%y. From there, we addd a month and subtract a day.
 	daysInMonth=`date -d "$YYYY/$MM/1 + 1 month - 1 day" "+%d"`
 	
-	for (( DD=1 ; DD<=$daysInMonth ; DD++ ))
+	for (( DDIt=1 ; DDIt<=$daysInMonth ; DDIt++ ))
 		do
+		#Ensure the day is of two digit format
+		printf -v DD "%02d" $DDIt
 		finalTiff=${config["dataset"]}${YYYY}${MM}${DD}${config["ext"]}
 		
 		echo "Getting data for month ${YYYY}-${MM}-${DD}..."
