@@ -20,18 +20,29 @@ wget http://services.nacse.org/prism/data/public/4km/ppt/$YYYY$MM$DD
 unzip $YYYY$MM$DD
 
 echo "Projecting raster..."
-#Based on information from the raster, projection comes in at EPSG 6269
-#So, we will need to reproject to 4326
-#gdalinfo gdalinfo RISM_ppt_stable_4kmD2_${YYYY}${MM}${DD}_bil.bil
-gdalwarp PRISM_ppt_stable_4kmD2_${YYYY}${MM}${DD}_bil.bil -t_srs EPSG:4326 -of "gtiff" "${confignr["datasource"]}-conus-4326-${YYYY}${MM}${DD}.gtiff"
+#Check if file exists. Recent day may be provisional and have a different name than "stable" data.
+#We send the output of compgen below to /dev/null bitbucket to ensure it doesn't echo anything to the terminal
+if compgen -G "PRISM_ppt_*${YYYY}${MM}${DD}_bil.bil" > /dev/null; then
+	#Since stable and orignal data may have different names, we can use comgen with glob patterns(option -G)
+	#to get the file name of the downloaded file
+    originalFile=`compgen -G "PRISM_ppt_*${YYYY}${MM}${DD}_bil.bil"`
+	
+	#Based on information from the raster, projection comes in at EPSG 6269
+	#So, we will need to reproject to 4326
+	#gdalinfo gdalinfo RISM_ppt_stable_4kmD2_${YYYY}${MM}${DD}_bil.bil
+	gdalwarp $originalFile -t_srs EPSG:4326 -of "gtiff" "${confignr["datasource"]}-conus-4326-${YYYY}${MM}${DD}.gtiff"
 
-echo "Clipping raster..."
-#Clipping the raster: Use gdalwarp to crop to the cutline maskExtent.csv, which is a csv of the CBP regions 
-gdalwarp -of "gtiff" -cutline $maskExtent -crop_to_cutline ${confignr["datasource"]}-conus-4326-${YYYY}${MM}${DD}.gtiff $finalTiff
+	echo "Clipping raster..."
+	#Clipping the raster: Use gdalwarp to crop to the cutline maskExtent.csv, which is a csv of the CBP regions 
+	gdalwarp -of "gtiff" -cutline $maskExtent -crop_to_cutline ${confignr["datasource"]}-conus-4326-${YYYY}${MM}${DD}.gtiff $finalTiff
 
-echo "Removing unecessary files..."
-#Remove all create unecessary files:
-rm $YYYY$MM$DD
-rm PRISM_ppt_stable_*
-rm ${confignr["datasource"]}-conus-4326*
+	echo "Removing unecessary files..."
+	#Remove all create unecessary files:
+	rm $YYYY$MM$DD
+	rm PRISM_ppt_*
+	rm ${confignr["datasource"]}-conus-4326*
+else
+	echo "File not found!"
+	echo "Downloaded files have unique format. Please check..."
+fi
 }

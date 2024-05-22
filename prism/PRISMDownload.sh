@@ -50,9 +50,14 @@ for MM in {1..12}
 		#Download the daily PRISM data for target day, reporject, and crop
 		downloadDailyPRISM config $finalTiff $maskExtent $YYYY $MM $DD
 		
-		echo "Seding data for month ${YYYY}-${MM}-${DD} to database..."
-		#Add raster to the timeseries table
-		addRasterToDBase2 config $finalTiff "$YYYY-$MM-$DD 00" 86400
+		#If the tiff was generated from the download, proceed to upload to db:
+		if [ -f "${finalTiff}" ]; then
+			echo "Seding data for month ${YYYY}-${MM}-${DD} to database..."
+			#Add raster to the timeseries table
+			addRasterToDBase2 config $finalTiff "$YYYY-$MM-$DD 00" 86400
+		else
+			echo "Tiff not generated from download script. Check warnings."
+		fi
 		
 	done
 done
