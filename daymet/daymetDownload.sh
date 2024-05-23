@@ -37,7 +37,7 @@ var="prcp"
 
 #Get the bounding box of the user selected mask.
 #First, get the extent output from ogrinfo
-bboxExtent=`ogrinfo maskExtent.csv maskExtent | grep "Extent: "`
+bboxExtent=`ogrinfo $maskExtent maskExtent | grep "Extent: "`
 
 #Use grep to get only the matching pattern (-o) via perl regular expression (-P) to identify the coordinates of the bounding box.
 #This returns both the east/west coordinate or the north AND south coordinates. We can use head/tail to just get the coordinate 
@@ -68,10 +68,11 @@ echo $YYYY
 		#e.g. the $y/$m/1 sets the date initially to the date $m/01/%y. From there, we addd a month and subtract a day.
 		if [ `date -d "${YYYY}/02/1 + 1 month - 1 day" "+%d"` -eq 29 ]; then
 			#For leap years, end query at december 30th
-			wget -O ${par}_${YYYY}subset.nc "https://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/2129/daymet_v4_daily_${region}_${par}_${YYYY}.nc?var=lat&var=lon&var=${par}&north=${north}&west=${west}&east=${east}&south=${south}&horizStride=1&time_start=${YYYY}-01-01T12:00:00Z&time_end=${YYYY}-12-30T12:00:00Z&timeStride=1&accept=netcdf"
+			wget -O ${par}_${YYYY}subset.nc "https://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/2129/daymet_v4_daily_${region}_${par}_${YYYY}.nc?var=lat&var=lon&var=${par}&north=${bbox["north"]}&west=${bbox["west"]}&east=${bbox["east"]}&south=${bbox["south"]}&horizStride=1&time_start=${YYYY}-01-01T12:00:00Z&time_end=${YYYY}-12-30T12:00:00Z&timeStride=1&accept=netcdf"
 		else
 			#For non-leap years, query january 1st through december 31st
-			wget -O ${par}_${YYYY}subset.nc "https://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/2129/daymet_v4_daily_${region}_${par}_${YYYY}.nc?var=lat&var=lon&var=${par}&north=${north}&west=${west}&east=${east}&south=${south}&horizStride=1&time_start=${YYYY}-01-01T12:00:00Z&time_end=${YYYY}-12-31T12:00:00Z&timeStride=1&accept=netcdf"
+			wget -O ${par}_${YYYY}subset.nc "https://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/2129/daymet_v4_daily_${region}_${par}_${YYYY}.nc?var=lat&var=lon&var=${par}&north=${bbox["north"]}&west=${bbox["west"]}&east=${bbox["east"]}&south=${bbox["south"]}&horizStride=1&time_start=${YYYY}-01-01T12:00:00Z&time_end=${YYYY}-12-31T12:00:00Z&timeStride=1&accept=netcdf"
+			
 		fi
 		
 		#Based on information from the raster, projection comes in at EPSG 6269
@@ -103,7 +104,6 @@ echo $YYYY
 		
 		#Execute sql file to bring rasters into database (alpha)
 		psql -h dbase2 -f "tmp_${config["datasource"]}-test.sql" -d drupal.alpha
-		
 		
 		########################
 		

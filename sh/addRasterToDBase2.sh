@@ -40,13 +40,13 @@ echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, enti
 	--there is no matching data in dh_timeseries_weather
 	left outer join dh_timeseries_weather as w
 		on (f.hydroid = w.featureid and w.tstime = '${tstime}' and w.varid = v.hydroid) 
-	left outer join tmp_${config["datasource"]} as met
+	left outer join tmp_${confignr["datasource"]} as met
 		on (1 = 1)
 	--By specifying tid = NULL we ensure this query returns no rows if there is a match within dh_timeseries_weather
 	WHERE w.tid is null
 		AND f.hydrocode = '${confignr["extent_hydrocode"]}';" | psql -h dbase2 -d drupal.alpha
 		
 echo "Removing unecessary files..."
-rm tmp_${config["datasource"]}-test.sql
+rm tmp_${confignr["datasource"]}-test.sql
 
 }
