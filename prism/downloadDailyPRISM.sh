@@ -29,7 +29,6 @@ if compgen -G "PRISM_ppt_*${YYYY}${MM}${DD}_bil.bil" > /dev/null; then
 	
 	#Based on information from the raster, projection comes in at EPSG 6269
 	#So, we will need to reproject to 4326
-	#gdalinfo gdalinfo RISM_ppt_stable_4kmD2_${YYYY}${MM}${DD}_bil.bil
 	gdalwarp $originalFile -t_srs EPSG:4326 -of "gtiff" "${confignr["datasource"]}-conus-4326-${YYYY}${MM}${DD}.gtiff"
 
 	echo "Clipping raster..."
