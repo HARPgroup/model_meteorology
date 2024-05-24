@@ -9,7 +9,7 @@ ds$get_token(rest_pw = rest_pw)
 
 rodf <- data.frame(
   'model_version' = c('cbp-6.0', 'cbp-6.0'),
-  'runid' = c('mash', 'mash'),
+  'runid' = c('met2date', 'met2date'),
   'metric' = c('PRC_anomaly_count','PRC_daily_error_count'),
   'runlabel' = c('PRC_anomaly_count', 'PRC_daily_error_count')
 )
