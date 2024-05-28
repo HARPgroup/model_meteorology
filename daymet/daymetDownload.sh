@@ -3,11 +3,8 @@
 #The first user input should be the start year at which to begin downloading daymet data
 startyr=$1
 
-#The second user input should be the end year at which to begin downloading daymet data
-endyr=$2
-
-#The third input is the extent (a vector mask) by which the imported precip rasters should be clipped. This may be a file path to a WKT csv files, for instance.
-maskExtent=$3
+#The second input is the extent (a vector mask) by which the imported precip rasters should be clipped. This may be a file path to a WKT csv files, for instance.
+maskExtent=$2
 
 #Update the variable definition table. Only needs to be performed once to ensure PRISM data has a reference varkey and other data:
 #--Update dh_variabledefinition to include a variable for prism data
@@ -78,17 +75,45 @@ echo $YYYY
 		#Based on information from the raster, projection comes in at EPSG 6269
 		#So, we will need to reproject to 4326
 		#gdalinfo gdalinfo RISM_ppt_stable_4kmD2_${YYYY}${MM}${DD}_bil.bil
-		gdalwarp NETCDF:"prcp_2014subset.nc":prcp -t_srs EPSG:4326 -of "gtiff" "${config["datasource"]}-${par}-${YYYY}.gtiff"
+		gdalwarp NETCDF:"${par}_${YYYY}subset.nc":prcp -t_srs EPSG:4326 -of "gtiff" "${config["datasource"]}-${par}-${YYYY}.gtiff"
 		
 		#Clipping the raster: Use gdalwarp to crop to the cutline maskExtent.csv, which is a csv of the CBP regions 
 		gdalwarp -of "gtiff" -cutline $maskExtent -crop_to_cutline ${config["datasource"]}-${par}-${YYYY}.gtiff $finalTiff
 		
-		#To Add to the database, one of the following should work. We may need to modify to give more specific name if we import
-		#using the addRasterToDBase2. We'd also need to specify the end date for addRasterToDBase2
+		#Identify how many bands there are in the raster. For a full year download, 
+		#this should be 365. However, we should evaluate this programmatically to 
+		#be sure. Below, we get only the band numbers from gdal info by first 
+		#searching in the pattern Band XX and then getting only the maximum number 
+		#via a reverse sort
+		numBands=`gdalinfo daymet-prcp-2023.gtiff -nomd -norat | grep -oP "Band [0-9]* " | grep -oP "[0-9]*" | sort -nr | head -n1`
 		
+		#Find the dates associated with the bands, pulling the NETCDF dim time 
+		#values from the metadata. This comes as 
+		#NETCDF_DIM_time_VALUES={DATE1,DATE2,...,DATEN}
+		#so we use pattern matching to find a repeating group using ()
+		bandDates=`gdalinfo daymet_precip_2023_CBP.gtiff | grep -oP "NETCDF_DIM_time_VALUES.*" | grep -oP "([0-9]*\.?[0-9]*,?[0-9]*\.?[0-9]*)+"`
 		
-		#Add the raster to the database.
-		#source addRasterToDBase2.sh
+		#Origin for dates:
+		dateOrigin=`gdalinfo daymet_precip_2023_CBP.gtiff | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*"`
+		#Seconds before epoch
+		timeBeforeEpoch=`date --date="$dateOrigin" +'%s'`
+		
+		for (( i=1 ; DDIt<=$numBands ; i++ ))
+		  do
+		  #Get the day associated with the current raster based on $bandDates above.
+		  #Use awk to search in a comma separated (-F ',') file for line $i.
+		  #Note the use of single quotes!
+		  bandDatei=`echo $bandDates | awk -F ',' '{print $'$i'}'`
+		  
+		  #bandDatei is the days since 1950-01-01 00:00:00. We need seconds 
+		  #after epoch
+		  echo $(( $bandDatei * 86400 + $timeBeforeEpoch ))
+		  
+		  
+		  met_raster2db.sh ${config["datasource"]} $finalTiff "$YYYY-01-01 00" 86400 ${config["entity_type"]} ${config["varkey"]} $i
+		  
+		done
+		
 		#addRasterToDBase2 "$YYYY-$MM-$DD 00" config $finalTiff 86400
 		
 		
@@ -100,7 +125,7 @@ echo $YYYY
 		
 		#Create sql file that will add the raster (-a for amend or -d for drop and recreate) into the target table
 		#The -t option tiles the raster for easier loading
-		raster2pgsql -d -t 1000x1000 $finalTiff tmp_${config["datasource"]} > tmp_${config["datasource"]}-test.sql
+		raster2pgsql -d -t 1000x1000 -b 1 $finalTiff tmp_${config["datasource"]} > tmp_${config["datasource"]}-test.sql
 		
 		#Execute sql file to bring rasters into database (alpha)
 		psql -h dbase2 -f "tmp_${config["datasource"]}-test.sql" -d drupal.alpha

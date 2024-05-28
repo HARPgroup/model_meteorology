@@ -1,28 +1,33 @@
 #!/bin/bash
 
 #Arugments to this function should be in the following order:
-#1 = config = array with datasource, varkey, extent_hydrocode, and other relevant information for adding file to dbase2
+#1 = datasource = precip data name used in temporary file generation e.g. "prism"
 #2 = finalTiff = File path of the raster to import into dbase
 #3 = tstimeIn = string in form of YYYY-MM-DD HH
-#4 = tend = How much time in seconds is this data representative for? E.g. for daily data, this is 86400
+#4 = tsElapse = How much time in seconds is this data representative for? E.g. for daily data, this is 86400
+#5 = entity_type = entity_type of desired db feature
+#6 = varkey = The key for the variable definition in dh_variabledefinition of interest e.g. daymet_precip_raster for daymet data
+#7 = Raster band = THe band of the raster to import
 
 #We set up a local name reference to the config array passed in by the user to easily access its value
 #CAUTION: Changes to confignr likely impact the original array passed by user!
 datasource=$1
 finalTiff=$2
 tstimeIn=$3
-entity_type=$4
-varkey=$5
+tsElapse=$4
+entity_type=$5
+varkey=$6
+band="${7:-1}"
 
 echo "Getting representative time..."
 #Get a representative numeric value of the date to be compatible with VAHydro data, specifying a compatible timezone and getting the date in seconds
 tstime=`TZ="America/New_York" date -d "$tstimeIn:00:00" +'%s'`
-tsendtime=$(( $tstime+$4 ))
+tsendtime=$(( $tstime+$tsElapse ))
 
 echo "Creating sql file to import raster..."
 #Create sql file that will add the raster (-a for amend or -d for drop and recreate) into the target table
 #The -t option tiles the raster for easier loading
-raster2pgsql -d -t 1000x1000 $finalTiff tmp_${datasource} > tmp_${datasource}-test.sql
+raster2pgsql -d -t 1000x1000 -b $band $finalTiff tmp_${datasource} > tmp_${datasource}-test.sql
 
 echo "Sending raster to db..."
 #Execute sql file to bring rasters into database (alpha)
