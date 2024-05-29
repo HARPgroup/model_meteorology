@@ -19,10 +19,12 @@ declare -A config=(
    ["scratchdir"]="/tmp"
    ["dataset"]="daymet_precip_"
    ["datasource"]="daymet"
-   ["varkey"]="daymet_precip_raster"
+   ["varkey"]="daymet_mod_daily"
    ["extent_hydrocode"]="cbp6_met_coverage"
    ["extent_ftype"]="cbp_met_grid"
    ["extent_bundle"]="landunit"
+   ["timezone"]="UTC"
+   ["dt"]=86400
 )
 
 #Region - NA is used for conus. The complete list of regions is: na (North America), hi(Hawaii), pr(Puerto Rico)
@@ -56,7 +58,7 @@ echo $YYYY
 	echo $par
 		
 		#Output file named. This will be the raster cropped to maskExtent and reprojected in EPSG:4326
-		finalTiff=${config["dataset"]}${YYYY}${MM}${DD}${config["ext"]}
+		finalTiff=${config["dataset"]}${YYYY}${config["ext"]}
 		
 		#Evaluate if the year is a leap year. daymet uses 365 day years and on leap years December 31st will be missing:
 		#Evaluate if $YYYY is a leap year e.g. either divisible by 4 or 400, but not 100 inherently. 
@@ -65,11 +67,10 @@ echo $YYYY
 		#e.g. the $y/$m/1 sets the date initially to the date $m/01/%y. From there, we addd a month and subtract a day.
 		if [ `date -d "${YYYY}/02/1 + 1 month - 1 day" "+%d"` -eq 29 ]; then
 			#For leap years, end query at december 30th
-			wget -O ${par}_${YYYY}subset.nc "https://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/2129/daymet_v4_daily_${region}_${par}_${YYYY}.nc?var=lat&var=lon&var=${par}&north=${bbox["north"]}&west=${bbox["west"]}&east=${bbox["east"]}&south=${bbox["south"]}&horizStride=1&time_start=${YYYY}-01-01T12:00:00Z&time_end=${YYYY}-12-30T12:00:00Z&timeStride=1&accept=netcdf"
+			wget -O ${par}_${YYYY}subset.nc "https://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/2129/daymet_v4_daily_${region}_${par}_${YYYY}.nc?var=lat&var=lon&var=${par}&north=${bbox["north"]}&west=${bbox["west"]}&east=${bbox["east"]}&south=${bbox["south"]}&horizStride=1&time_start=${YYYY}-01-01T12:00:00Z&time_end=${YYYY}-02-15T12:00:00Z&timeStride=1&accept=netcdf"
 		else
 			#For non-leap years, query january 1st through december 31st
 			wget -O ${par}_${YYYY}subset.nc "https://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/2129/daymet_v4_daily_${region}_${par}_${YYYY}.nc?var=lat&var=lon&var=${par}&north=${bbox["north"]}&west=${bbox["west"]}&east=${bbox["east"]}&south=${bbox["south"]}&horizStride=1&time_start=${YYYY}-01-01T12:00:00Z&time_end=${YYYY}-12-31T12:00:00Z&timeStride=1&accept=netcdf"
-			
 		fi
 		
 		#Based on information from the raster, projection comes in at EPSG 6269
@@ -85,54 +86,50 @@ echo $YYYY
 		#be sure. Below, we get only the band numbers from gdal info by first 
 		#searching in the pattern Band XX and then getting only the maximum number 
 		#via a reverse sort
-		numBands=`gdalinfo daymet-prcp-2023.gtiff -nomd -norat | grep -oP "Band [0-9]* " | grep -oP "[0-9]*" | sort -nr | head -n1`
+		numBands=`gdalinfo $finalTiff -nomd -norat | grep -oP "Band [0-9]* " | grep -oP "[0-9]*" | sort -nr | head -n1`
 		
 		#Find the dates associated with the bands, pulling the NETCDF dim time 
 		#values from the metadata. This comes as 
 		#NETCDF_DIM_time_VALUES={DATE1,DATE2,...,DATEN}
 		#so we use pattern matching to find a repeating group using ()
-		bandDates=`gdalinfo daymet_precip_2023_CBP.gtiff | grep -oP "NETCDF_DIM_time_VALUES.*" | grep -oP "([0-9]*\.?[0-9]*,?[0-9]*\.?[0-9]*)+"`
+		bandDates=`gdalinfo $finalTiff | grep -oP "NETCDF_DIM_time_VALUES.*" | grep -oP "([0-9]*\.?[0-9]*,?[0-9]*\.?[0-9]*)+"`
 		
 		#Origin for dates:
-		dateOrigin=`gdalinfo daymet_precip_2023_CBP.gtiff | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*"`
-		#Seconds before epoch
-		timeBeforeEpoch=`date --date="$dateOrigin" +'%s'`
+		dateOrigin=`gdalinfo $finalTiff | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*"`
+		dateOriginNoTime=`gdalinfo $finalTiff | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*" | grep -oP "[0-9]+-[0-9]+-[0-9]+"`
 		
 		for (( i=1 ; DDIt<=$numBands ; i++ ))
 		  do
 		  #Get the day associated with the current raster based on $bandDates above.
 		  #Use awk to search in a comma separated (-F ',') file for line $i.
-		  #Note the use of single quotes!
-		  bandDatei=`echo $bandDates | awk -F ',' '{print $'$i'}'`
+		  #Note the use of single quotes! Remove the decimal to floor down to an 
+		  #integer
+		  bandDatei=`echo $bandDates | awk -F ',' '{print $'$i'}' | grep -oP "^[0-9]+"`
+		  #Dates are 1 day behind, add 1
+		  bandDatei=$(( $bandDatei + 1))
 		  
 		  #bandDatei is the days since 1950-01-01 00:00:00. We need seconds 
 		  #after epoch
-		  echo $(( $bandDatei * 86400 + $timeBeforeEpoch ))
+		  checkMetaDate=`date -d "${dateOriginNoTime} +$(( ${bandDatei} -1 ))days" +%Y-%m-%d`
+      #Based on julian day (estimated based on assumption of complete dataset)
+      checkJulianDate=`date -d "${YYYY}-01-01 +$(( ${i} -1 ))days" +%Y-%m-%d`
+      
+      if [ "$checkMetaDate" != "$checkJulianDate" ]; then
+        echo "WARNING: Date in Meta data does NOT match the expected date for band ${i}!"
+      fi
+      
+      dayDataset=${config["dataset"]}$checkJulianDate${config["ext"]}
+      
+      #Send this band to its own raster
+		  gdal_translate -b $i $finalTiff -of "gtiff" $dayDataset
 		  
+		  #TZ="UTC" date -d "$checkJulianDate 00:00:00" +'%s'
 		  
-		  met_raster2db.sh ${config["datasource"]} $finalTiff "$YYYY-01-01 00" 86400 ${config["entity_type"]} ${config["varkey"]} $i
-		  
+		  #Send to database
+		  source met_raster2db.sh ${config["datasource"]} ${config["extent_hydrocode"]} $dayDataset "$checkJulianDate 00" ${config["dt"]} ${config["timezone"]} ${config["entity_type"]} ${config["varkey"]} 1
 		done
 		
-		#addRasterToDBase2 "$YYYY-$MM-$DD 00" config $finalTiff 86400
-		
-		
-		
-		#################TESTING
-		#Get a representative numeric value of the date to be compatible with VAHydro data, specifying a compatible timezone and getting the date in seconds
-		tstime=`TZ="America/New_York" date -d "$YYYY-$MM-$DD 00:00:00" +'%s'`
-		tsendtime=$(( $tstime+86400 ))
-		
-		#Create sql file that will add the raster (-a for amend or -d for drop and recreate) into the target table
-		#The -t option tiles the raster for easier loading
-		raster2pgsql -d -t 1000x1000 -b 1 $finalTiff tmp_${config["datasource"]} > tmp_${config["datasource"]}-test.sql
-		
-		#Execute sql file to bring rasters into database (alpha)
-		psql -h dbase2 -f "tmp_${config["datasource"]}-test.sql" -d drupal.alpha
-		
-		########################
-		
-	done;
+	done
 done
 
 
