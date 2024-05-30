@@ -13,15 +13,15 @@
 #CAUTION: Changes to confignr likely impact the original array passed by user!
 datasource=$1
 finalTiff=$2
-tstimeIn=$3
+tstime=$3
 tsElapse=$4
 entity_type=$5
 varkey=$6
-band="${7:-1}"
+extent_hydrocode=$7
+band="${8:-1}"
 
 echo "Getting representative time..."
 #Get a representative numeric value of the date to be compatible with VAHydro data, specifying a compatible timezone and getting the date in seconds
-tstime=`TZ="America/New_York" date -d "$tstimeIn:00:00" +'%s'`
 tsendtime=$(( $tstime+$tsElapse ))
 
 echo "Creating sql file to import raster..."
@@ -36,7 +36,6 @@ psql -h dbase2 -f "tmp_${datasource}-test.sql" -d drupal.alpha
 echo "Updating dh_timeseries_weather..."
 #Now update dh_timeseries_weather
 echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, entity_type, rast)
-
 	select '$tstime','$tsendtime', v.hydroid as varid, f.hydroid as featureid, '${entity_type}', met.rast
 	from dh_feature as f 
 	left outer join dh_variabledefinition as v
@@ -50,6 +49,6 @@ echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, enti
 	--By specifying tid = NULL we ensure this query returns no rows if there is a match within dh_timeseries_weather
 	WHERE w.tid is null
 		AND f.hydrocode = '${extent_hydrocode}';" | psql -h dbase2 -d drupal.alpha
-		
+
 echo "Removing unecessary files..."
 rm tmp_${datasource}-test.sql
