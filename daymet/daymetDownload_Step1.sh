@@ -9,6 +9,7 @@
 #$2 = Output directory
 #$3 = Single day download forcing, 1 or 0 and defaults to 0 (no forcing)
 #$4 = Redownload year forcing, 1 or 0 and defaults to 0 (no forcing)
+#Note that maskExtent and config array need be defined prior to call
 dateIn=$1
 output_dir=$2
 dayForcing="${3:-0}"
@@ -199,9 +200,10 @@ for par in $var; do
       gdal_translate -b 1 NETCDF:"${daymetOriginal}":prcp -of "gtiff" $src_dir/$finalTiff
     fi
   fi
-	
 #End var for loop
 done
+
+#return $src_dir/$finalTiff
 
 
 
