@@ -2,26 +2,28 @@
 
 #Arugments to this function should be in the following order:
 #1 = datasource = precip data name used in temporary file generation e.g. "prism"
-#2 = finalTiff = File path of the raster to import into dbase
-#3 = tstimeIn = string in form of YYYY-MM-DD HH
-#4 = tsElapse = How much time in seconds is this data representative for? E.g. for daily data, this is 86400
-#5 = entity_type = entity_type of desired db feature
-#6 = varkey = The key for the variable definition in dh_variabledefinition of interest e.g. daymet_precip_raster for daymet data
-#7 = Raster band = THe band of the raster to import
+#2 = extent_hydrocode = The name of the feature coverage to which this met data will be tied to
+#3 = finalTiff = File path of the raster to import into dbase
+#4 = tstimeIn = string in form of YYYY-MM-DD HH
+#5 = tsElapse = How much time in seconds is this data representative for? E.g. for daily data, this is 86400
+#6 = tsTZ = Timezone for the timestep. Should be UTC and should be passed in through config file
+#7 = entity_type = entity_type of desired db feature
+#8 = varkey = The key for the variable definition in dh_variabledefinition of interest e.g. daymet_precip_raster for daymet data
 
 #We set up a local name reference to the config array passed in by the user to easily access its value
 #CAUTION: Changes to confignr likely impact the original array passed by user!
 datasource=$1
-finalTiff=$2
-tstimeIn=$3
-tsElapse=$4
-entity_type=$5
-varkey=$6
-band="${7:-1}"
+extent_hydrocode=$2
+finalTiff=$3
+tstimeIn=$4
+tsElapse=$5
+tsTZ=$6
+entity_type=$7
+varkey=$8
 
 echo "Getting representative time..."
 #Get a representative numeric value of the date to be compatible with VAHydro data, specifying a compatible timezone and getting the date in seconds
-tstime=`TZ="America/New_York" date -d "$tstimeIn:00:00" +'%s'`
+tstime=`TZ="$tsTZ" date -d "$tstimeIn:00:00" +'%s'`
 tsendtime=$(( $tstime+$tsElapse ))
 
 echo "Creating sql file to import raster..."
