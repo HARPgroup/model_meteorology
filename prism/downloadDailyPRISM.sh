@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function downloadDailyPRISM()
+function downloadPRISM()
 {
 	#Arugments to this function should be in the following order:
 	#1 = finalTiff = File path of the raster to import into dbase
@@ -10,10 +10,9 @@ function downloadDailyPRISM()
 
 	#We set up a local name reference to the config array passed in by the user to easily access its value
 	#CAUTION: Changes to confignr likely impact the original array passed by user!
-	finalTiff=$1
-	YYYY=$2
-	MM=$3
-	DD=$4
+	YYYY=$1
+	MM=$2
+	DD=$3
 	>&2 echo "Getting data from PRISM REST service..."
 	>&2 echo "Trying: wget http://services.nacse.org/prism/data/public/4km/ppt/$YYYY$MM$DD "
 	#Download and unzip the raster from the PRISM webservices
@@ -26,22 +25,17 @@ function downloadDailyPRISM()
 		#Since stable and orignal data may have different names, we can use comgen with glob patterns(option -G)
 		#to get the file name of the downloaded file
 		originalFile=`compgen -G $download_name`
-		mv $originalFile $finalTiff
 		#Based on information from the raster, projection comes in at EPSG 6269
 		#So, we will need to reproject to 4326
 		rm $YYYY$MM$DD
-		rm PRISM_ppt_*
-		originalFile=$finalTiff
 	else
 		>&2 echo "PRISM download could not find $download_name "
 		>&2 echo "Downloaded files have unique format. Please check..."
 		originalFile="-9999"
 	fi
-	# return the file name to the calling statement
-	return $originalFile
 }
 
-function downloadProcessDailyPRISM()
+function downloadDailyPRISM()
 {
 #Arugments to this function should be in the following order:
 #1 = config = array with datasource, varkey, extent_hydrocode, and other relevant information for adding file to dbase2
