@@ -7,8 +7,14 @@
 #Required inputs are:
 #$1 = Date of interest
 #$2 = Output directory
+#$3 = Single day download forcing, 1 or 0 and defaults to 0 (no forcing)
+#$4 = Redownload year forcing, 1 or 0 and defaults to 0 (no forcing)
 dateIn=$1
 output_dir=$2
+dayForcing="${3:-0}"
+yearForcing="${4:-0}"
+configExt=${config["ext"}
+configDataset=${config["dataset"}
 
 #Get the year associated with the date
 YYYY=`date -d "${dateIn}" "+%Y"`
@@ -48,14 +54,14 @@ echo $YYYY
 for par in $var; do
   echo $par
 	#Output file named for the full year archive. This will be the netCDF downloaded from daymet
-	daymetOriginal=${config["dataset"]}${par}_${YYYY}.nc
+	daymetOriginal="${output_dir}/${configDataset}${par}_${YYYY}.nc"
   
   #Evalute the user input configuration. Is the full year to be downloaded?
   #Is forcing on?
   #If the full year archive is not available, download and extract all days.
   #If it is available and forcing is on OR the request day is unavailable, extract
   #from the full year archive.
-  if [ ! -f "${output_dir}/${YYYY}/${daymetOriginal}" ]; then
+  if [ ! -f "${output_dir}/${YYYY}/${daymetOriginal}" ] || [ $yearForcing -eq 1 ]; then
     #Download full year archive and extract all days:
     
     #Evaluate if the year is a leap year. daymet uses 365 day years and on leap years December 31st will be missing:
@@ -89,7 +95,7 @@ for par in $var; do
 	  #GET ONLY DATE: ASSUMES 00:00:00 UTC!
 	  dateOriginNoTime=`gdalinfo NETCDF:"${daymetOriginal}":prcp | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*" | grep -oP "[0-9]+-[0-9]+-[0-9]+"`
 	  
-	  for (( i=1 ; DDIt<=$numBands ; i++ ))
+	  for (( i=1 ; i<=$numBands ; i++ ))
 	    do
 	    #Write data to the appropriate folder:
       #Check if base directory for the julian day exists. If not, create it:
@@ -119,7 +125,7 @@ for par in $var; do
         echo "WARNING: Date in Meta data does NOT match the expected date for band ${i}!"
       fi
       
-      finalTiff="ORIGINAL_${config["dataset"]}${checkJulianDate}${config["ext"]}"
+      finalTiff="ORIGINAL_${configDataset}${checkJulianDate}${configExt}"
       
       #Send this band to its own raster
 	    gdal_translate -b $i NETCDF:"${daymetOriginal}":prcp -of "gtiff" $src_dir/$finalTiff
@@ -131,12 +137,12 @@ for par in $var; do
     #Annual archive already exists
     annualArchive=${output_dir}/${YYYY}/${daymetOriginal}
     #Does the daily gtiff already exist?
-    checkFile="ORIGINAL_${config["dataset"]}${dateIn}${config["ext"]}"
-    if [ ! -f "${output_dir}/${YYYY}/${jday}/${checkFile}" ] || [ $forcing 1 -eq ]; then
+    checkFile="ORIGINAL_${configDataset}${dateIn}${configExt}"
+    if [ ! -f "${output_dir}/${YYYY}/${jday}/${checkFile}" ] || [ $dayForcing -eq 1 ]; then
       #Indivudal day either does not exist or forcing is on. Extract day from 
       #Rest services:
       #Output file named. This will be the netCDF downloaded from daymet
-	    daymetOriginal=${config["dataset"]}${par}_${dateIn}.nc
+	    daymetOriginal="${output_dir}/${configDataset}${par}_${dateIn}.nc"
 	
 	    #Evaluate if the year is a leap year. daymet uses 365 day years and on leap years December 31st will be missing:
 	    #Evaluate if $YYYY is a leap year e.g. either divisible by 4 or 400, but not 100 inherently. 
@@ -187,7 +193,7 @@ for par in $var; do
         echo "WARNING: Date in Meta data does NOT match the expected date for band 1!"
       fi
         
-      finalTiff="ORIGINAL_${config["dataset"]}${dateIn}${config["ext"]}"
+      finalTiff="ORIGINAL_${configDataset}${dateIn}${configExt}"
         
       #Send this band to its own raster
       gdal_translate -b 1 NETCDF:"${daymetOriginal}":prcp -of "gtiff" $src_dir/$finalTiff
