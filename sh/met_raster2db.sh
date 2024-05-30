@@ -13,7 +13,7 @@
 #We set up a local name reference to the config array passed in by the user to easily access its value
 #CAUTION: Changes to confignr likely impact the original array passed by user!
 if [ $# -lt 8 ]; then
-  echo "Use: met_raster2dn.sh datasource finalTiff tstime tsElapse entity_type varkey extent_hydrocode db_name"
+  echo "Use: met_raster2dn.sh datasource finalTiff tstime tsElapse entity_type varkey extent_hydrocode db_name force"
   exit
 fi
 datasource=$1
@@ -24,7 +24,11 @@ entity_type=$5
 varkey=$6
 extent_hydrocode=$7
 db_name=$8
-
+db_host=$9
+force=0
+if [ $# -gt 9 ]; then
+  force=$10
+fi
 echo "Getting representative time..."
 #Get a representative numeric value of the date to be compatible with VAHydro data, specifying a compatible timezone and getting the date in seconds
 tsendtime=$(( $tstime+$tsElapse ))
@@ -36,7 +40,19 @@ raster2pgsql -d -t 1000x1000 $finalTiff tmp_${datasource} > tmp_${datasource}-te
 
 echo "Sending raster to db..."
 #Execute sql file to bring rasters into database (alpha)
-psql -h dbase2 -f "tmp_${datasource}-test.sql" -d $db_name
+psql -h $db_host -f "tmp_${datasource}-test.sql" -d $db_name
+
+if [ "$force" == "1" ]; then
+  # user wishes to delete old values
+  echo "delete from dh_timeseries_weather 
+        WHERE varid in (select hydroid from dh_variabledefinition where varkey = '${varkey}')
+		AND featureid in (
+			select hydroid from dh_feature where hydrocode = '${extent_hydrocode}'
+		)
+		and tstime = $tstime 
+		and tsendtime = '$tsendtime
+		;" | psql -h $db_host -d $db_name 
+fi
 
 echo "Updating dh_timeseries_weather..."
 #Now update dh_timeseries_weather
@@ -53,6 +69,6 @@ echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, enti
 		on (1 = 1)
 	--By specifying tid = NULL we ensure this query returns no rows if there is a match within dh_timeseries_weather
 	WHERE w.tid is null
-		AND f.hydrocode = '${extent_hydrocode}';" | psql -h dbase2 -d $db_name
+		AND f.hydrocode = '${extent_hydrocode}';" | psql -h $db_host -d $db_name
 echo "Removing unecessary files..."
 rm tmp_${datasource}-test.sql
