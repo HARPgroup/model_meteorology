@@ -44,6 +44,16 @@ psql -h $db_host -f "tmp_${datasource}-test.sql" -d $db_name
 
 if [ "$force" == "1" ]; then
   # user wishes to delete old values
+  
+  echo "TRYING: delete from dh_timeseries_weather 
+        WHERE varid in (select hydroid from dh_variabledefinition where varkey = '${varkey}')
+		AND featureid in (
+			select hydroid from dh_feature where hydrocode = '${extent_hydrocode}'
+		)
+		and tstime = $tstime 
+		and tsendtime = '$tsendtime
+		;"
+
   echo "delete from dh_timeseries_weather 
         WHERE varid in (select hydroid from dh_variabledefinition where varkey = '${varkey}')
 		AND featureid in (
