@@ -15,6 +15,7 @@ function downloadDailyPRISM()
 	MM=$3
 	DD=$4
 	>&2 echo "Getting data from PRISM REST service..."
+	>&2 echo "Trying: wget http://services.nacse.org/prism/data/public/4km/ppt/$YYYY$MM$DD "
 	#Download and unzip the raster from the PRISM webservices
 	wget http://services.nacse.org/prism/data/public/4km/ppt/$YYYY$MM$DD
 	unzip $YYYY$MM$DD
