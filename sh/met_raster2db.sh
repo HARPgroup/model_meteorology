@@ -9,7 +9,6 @@
 #6 = tsTZ = Timezone for the timestep. Should be UTC and should be passed in through config file
 #7 = entity_type = entity_type of desired db feature
 #8 = varkey = The key for the variable definition in dh_variabledefinition of interest e.g. daymet_precip_raster for daymet data
-#9 = Raster band = THe band of the raster to import
 
 #We set up a local name reference to the config array passed in by the user to easily access its value
 #CAUTION: Changes to confignr likely impact the original array passed by user!
@@ -21,7 +20,6 @@ tsElapse=$5
 tsTZ=$6
 entity_type=$7
 varkey=$8
-band="${9:-1}"
 
 echo "Getting representative time..."
 #Get a representative numeric value of the date to be compatible with VAHydro data, specifying a compatible timezone and getting the date in seconds

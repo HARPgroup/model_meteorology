@@ -126,7 +126,7 @@ echo $YYYY
 		  #TZ="UTC" date -d "$checkJulianDate 00:00:00" +'%s'
 		  
 		  #Send to database
-		  source met_raster2db.sh ${config["datasource"]} ${config["extent_hydrocode"]} $dayDataset "$checkJulianDate 00" ${config["dt"]} ${config["timezone"]} ${config["entity_type"]} ${config["varkey"]} 1
+		  source met_raster2db.sh ${config["datasource"]} ${config["extent_hydrocode"]} $dayDataset "$checkJulianDate 00" ${config["dt"]} ${config["timezone"]} ${config["entity_type"]} ${config["varkey"]}
 		done
 		
 	done
