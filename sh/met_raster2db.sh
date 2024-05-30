@@ -27,7 +27,7 @@ db_name=$8
 db_host=$9
 force=0
 if [ $# -gt 9 ]; then
-  force=$10
+  force=${10}
 fi
 echo "Getting representative time..."
 #Get a representative numeric value of the date to be compatible with VAHydro data, specifying a compatible timezone and getting the date in seconds
@@ -44,7 +44,6 @@ psql -h $db_host -f "tmp_${datasource}-test.sql" -d $db_name
 
 if [ "$force" == "1" ]; then
   # user wishes to delete old values
-  
   echo "TRYING: delete from dh_timeseries_weather 
         WHERE varid in (select hydroid from dh_variabledefinition where varkey = '${varkey}')
 		AND featureid in (
