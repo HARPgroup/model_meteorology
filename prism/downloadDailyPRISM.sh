@@ -25,18 +25,19 @@ function downloadDailyPRISM()
 		#Since stable and orignal data may have different names, we can use comgen with glob patterns(option -G)
 		#to get the file name of the downloaded file
 		originalFile=`compgen -G $download_name`
-		
+		mv $originalFile $finalTiff
 		#Based on information from the raster, projection comes in at EPSG 6269
 		#So, we will need to reproject to 4326
 		rm $YYYY$MM$DD
 		rm PRISM_ppt_*
+		originalFile=$finalTiff
 	else
 		>&2 echo "PRISM download could not find $download_name "
 		>&2 echo "Downloaded files have unique format. Please check..."
 		originalFile="-9999"
 	fi
 	# return the file name to the calling statement
-	echo $originalFile
+	return $originalFile
 }
 
 function downloadProcessDailyPRISM()
