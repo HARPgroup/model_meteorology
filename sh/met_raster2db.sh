@@ -12,7 +12,7 @@
 
 #We set up a local name reference to the config array passed in by the user to easily access its value
 #CAUTION: Changes to confignr likely impact the original array passed by user!
-if [ $# -le 8 ]; then
+if [ $# -lt 8 ]; then
   echo "Use: met_raster2dn.sh datasource finalTiff tstime tsElapse entity_type varkey extent_hydrocode db_name"
   exit
 fi
