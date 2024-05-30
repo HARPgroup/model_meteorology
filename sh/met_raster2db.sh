@@ -50,7 +50,7 @@ if [ "$force" == "1" ]; then
 			select hydroid from dh_feature where hydrocode = '${extent_hydrocode}'
 		)
 		and tstime = $tstime 
-		and tsendtime = '$tsendtime
+		and tsendtime = $tsendtime
 		;"
 
   echo "delete from dh_timeseries_weather 
