@@ -36,11 +36,12 @@ tsendtime=$(( $tstime+$tsElapse ))
 echo "Creating sql file to import raster..."
 #Create sql file that will add the raster (-a for amend or -d for drop and recreate) into the target table
 #The -t option tiles the raster for easier loading
-raster2pgsql -d -t 1000x1000 $finalTiff tmp_${datasource} > tmp_${datasource}-test.sql
+tmp_sql_file=tmp_${datasource}-${tstime}-test.sql
+raster2pgsql -d -t 1000x1000 $finalTiff tmp_${datasource} > $tmp_sql_file
 
 echo "Sending raster to db..."
 #Execute sql file to bring rasters into database (alpha)
-psql -h $db_host -f "tmp_${datasource}-test.sql" -d $db_name
+psql -h $db_host -f "$tmp_sql_file" -d $db_name
 
 if [ "$force" == "1" ]; then
   # user wishes to delete old values
@@ -80,4 +81,4 @@ echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, enti
 	WHERE w.tid is null
 		AND f.hydrocode = '${extent_hydrocode}';" | psql -h $db_host -d $db_name
 echo "Removing unecessary files..."
-rm tmp_${datasource}-test.sql
+rm $tmp_sql_file
