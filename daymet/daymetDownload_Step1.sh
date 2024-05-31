@@ -11,11 +11,14 @@
 #$4 = Redownload year forcing, 1 or 0 and defaults to 0 (no forcing)
 #Note that maskExtent and config array need be defined prior to call
 dateIn=$1
+#Change to temp directory
 output_dir=$2
 dayForcing="${3:-0}"
 yearForcing="${4:-0}"
 configExt=${config["ext"}
 configDataset=${config["dataset"}
+
+#Date, datasource, temp directory
 
 #Get the year associated with the date
 YYYY=`date -d "${dateIn}" "+%Y"`
@@ -203,7 +206,7 @@ for par in $var; do
 #End var for loop
 done
 
-#return $src_dir/$finalTiff
+#return $src_dir/$finalTiff?
 
 
 
