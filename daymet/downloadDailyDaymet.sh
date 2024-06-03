@@ -26,7 +26,7 @@ function downloadDaymet()
   local dayForcing="${6:-0}"
  
   #Set local variable for config information for convenience
-  local configExt=".gtiff"
+  local configExt=".bil"
   local configDataset="daymet_precip"
   
   #Get the year associated with the date
@@ -103,7 +103,7 @@ function downloadDaymet()
       local finalTiff="ORIGINAL_${configDataset}${dateIn}${configExt}"
         
       #Send this band to its own raster
-      gdal_translate -b 1 NETCDF:"${daymetOriginal}":prcp -of "gtiff" $finalTiff
+      gdal_translate -b 1 NETCDF:"${daymetOriginal}":prcp -of "EHdr" $finalTiff
 	  echo "daymet data downloaded as NETCDF and translated to $finalTiff"
     else
       echo "The file ${checkFile} already exists. Please use forcing=1 to redownload this day (${dayIn}) or proceed to next date."
