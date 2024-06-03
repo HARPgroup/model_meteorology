@@ -104,6 +104,7 @@ function downloadDaymet()
         
       #Send this band to its own raster
       gdal_translate -b 1 NETCDF:"${daymetOriginal}":prcp -of "gtiff" $finalTiff
+	  echo "daymet data downloaded as NETCDF and translated to $finalTiff"
     else
       echo "The file ${checkFile} already exists. Please use forcing=1 to redownload this day (${dayIn}) or proceed to next date."
   	#End if statement for if file exists or download
