@@ -12,18 +12,12 @@ function downloadDaymet()
 {
   #Define local variables for inputs to function:  
   local dateIn=$1
-  local output_dir=$2
+  local maskExtent=$2
   local dayForcing="${3:-0}"
-  
-  #Required global variables:
-  #1 = config = An associative array with various pieces of information 
-  #to define data set and final output locations
-  #2 = maskExtent = A csv or similar file with the WKT of the mask with which to 
-  #clip the rasters. Used in daymet's download scripts
-  
+ 
   #Set local variable for config information for convenience
-  local configExt=$final_ext
-  local configDataset=$met_dateset
+  local configExt=".gtiff"
+  local configDataset="daymet_precip"
   
   #Get the year associated with the date
   local YYYY=`date -d "${dateIn}" "+%Y"`
@@ -38,6 +32,8 @@ function downloadDaymet()
   #Daymet variables. Allow multiple, but variables should be space separated. 
   # The complete list of Daymet variables is: tmin, tmax, prcp, srad, vp, swe, dayl
   local var="prcp"
+  
+  echo "Set extent of mask via $maskExtent"
   
   #Get the bounding box of the user selected mask.
   #First, get the extent output from ogrinfo
