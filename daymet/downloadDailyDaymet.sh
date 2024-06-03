@@ -65,19 +65,11 @@ function downloadDaymet()
     echo "Getting ${par} data for ${dateIn}"
   	#Does the daily gtiff already exist?
     local checkFile="ORIGINAL_${configDataset}${dateIn}${configExt}"
-    if [ ! -f "${output_dir}/${YYYY}/${jday}/${checkFile}" ] || [ $dayForcing -eq 1 ]; then
-      #Write data to the appropriate folder:
-      #Check if base directory for the julian day exists. If not, create it:
-      if [ ! -d "$output_dir/$YYYY/$jday" ]; then
-        #Using -p option, create the Parent year directory if it has not yet 
-        #been created
-        mkdir -p "$output_dir/$YYYY/$jday" 
-      fi
-    
+    if [ ! -f "${checkFile}" ] || [ $dayForcing -eq 1 ]; then
       #Indivudal day either does not exist or forcing is on. Extract day from 
       #Rest services:
       #Output file named. This will be the netCDF downloaded from daymet
-  	  local daymetOriginal="${output_dir}/${YYYY}/${jday}/${configDataset}${par}_${dateIn}.nc"
+  	  local daymetOriginal="${configDataset}${par}_${dateIn}.nc"
   
   	  #Evaluate if the year is a leap year. daymet uses 365 day years and on leap years December 31st will be missing:
   	  #Evaluate if $YYYY is a leap year e.g. either divisible by 4 or 400, but not 100 inherently. 
@@ -108,9 +100,6 @@ function downloadDaymet()
   	  local dateOrigin=`gdalinfo NETCDF:"${daymetOriginal}":prcp | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*"`
   	  #GET ONLY DATE: ASSUMES 00:00:00 UTC!
   	  local dateOriginNoTime=`gdalinfo NETCDF:"${daymetOriginal}":prcp | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*" | grep -oP "[0-9]+-[0-9]+-[0-9]+"`
-  	   
-      #Set the source directory for this file:
-      local src_dir="$output_dir/$YYYY/$jday"
       
       #Get the day associated with the current raster based on $bandDates above.
       #Remove the decimal to floor down to an integer
@@ -128,7 +117,7 @@ function downloadDaymet()
       local finalTiff="ORIGINAL_${configDataset}${dateIn}${configExt}"
         
       #Send this band to its own raster
-      gdal_translate -b 1 NETCDF:"${daymetOriginal}":prcp -of "gtiff" $src_dir/$finalTiff
+      gdal_translate -b 1 NETCDF:"${daymetOriginal}":prcp -of "gtiff" $finalTiff
     else
       echo "The file ${checkFile} already exists. Please use forcing=1 to redownload this day (${dayIn}) or proceed to next date."
   	#End if statement for if file exists or download
