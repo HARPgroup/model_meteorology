@@ -22,8 +22,8 @@ function downloadDaymet()
   #clip the rasters. Used in daymet's download scripts
   
   #Set local variable for config information for convenience
-  local configExt=${config["ext"]}
-  local configDataset=${config["dataset"]}
+  local configExt=$final_ext
+  local configDataset=$met_dateset
   
   #Get the year associated with the date
   local YYYY=`date -d "${dateIn}" "+%Y"`
