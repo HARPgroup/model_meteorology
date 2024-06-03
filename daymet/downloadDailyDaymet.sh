@@ -5,15 +5,25 @@
 
 #Required inputs are:
 #$1 = Date of interest
-#$2 = Output directory
-#$3 = Single day download forcing, 1 or 0 and defaults to 0 (no forcing)
+#$2-5 = Bounding box for download (associative array with north south west east in that order
+#$6 = Single day download forcing, 1 or 0 and defaults to 0 (no forcing)
 
 function downloadDaymet()
 {
   #Define local variables for inputs to function:  
   local dateIn=$1
-  local maskExtent=$2
-  local dayForcing="${3:-0}"
+  #Pass in bbox
+  declare -A bbox=(
+  	#North and south coordinates are slighly more complicated as they are identified below using leading white space, that we remove via a second grep call
+  	["north"]=$2
+	["south"]=$3
+	#For the east and west coordinates, get the first or second number that matches a literal minus sign (-) followed 
+  	#by at least one digit possibly followed by a literal period (.) followed by potnetially more digits
+  	["west"]=$4
+  	["east"]=$5
+  )
+  
+  local dayForcing="${6:-0}"
  
   #Set local variable for config information for convenience
   local configExt=".gtiff"
@@ -32,26 +42,6 @@ function downloadDaymet()
   #Daymet variables. Allow multiple, but variables should be space separated. 
   # The complete list of Daymet variables is: tmin, tmax, prcp, srad, vp, swe, dayl
   local var="prcp"
-  
-  echo "Set extent of mask via $maskExtent"
-  
-  #Get the bounding box of the user selected mask.
-  #First, get the extent output from ogrinfo
-  local bboxExtent=`ogrinfo $maskExtent maskExtent | grep "Extent: "`
-  
-  #Use grep to get only the matching pattern (-o) via perl regular expression (-P) to identify the coordinates of the bounding box.
-  #This returns both the east/west coordinate or the north AND south coordinates. We can use head/tail to just get the coordinate 
-  #of interest for the array below
-  declare -A bbox=(
-  	#For the east and west coordinates, get the first or second number that matches a literal minus sign (-) followed 
-  	#by at least one digit possibly followed by a literal period (.) followed by potnetially more digits
-  	["west"]=`echo $bboxExtent | grep -oP "\-[0-9]+[\.]?[0-9]*" | head -1`
-  	["east"]=`echo $bboxExtent | grep -oP "\-[0-9]+[\.]?[0-9]*" | tail -1`
-  	#North and south coordinates are slighly more complicated as they are identified below using leading white space, that we remove via a second grep call
-  	["south"]=`echo $bboxExtent | grep -oP " [0-9]+[\.]?[0-9]*" | grep -oP "([0-9]+[\.]?[0-9]*){1}" | head -1`
-  	["north"]=`echo $bboxExtent | grep -oP " [0-9]+[\.]?[0-9]*" | grep -oP "([0-9]+[\.]?[0-9]*){1}" | tail -1`
-  )
-  
   
   echo "Accessing year ${YYYY} data for ${dateIn}"
   
