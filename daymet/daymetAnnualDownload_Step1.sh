@@ -58,7 +58,7 @@ echo $YYYY
 for par in $var; do
   echo $par
 	#Output file named for the full year archive. This will be the netCDF downloaded from daymet
-	daymetOriginal="${output_dir}/${configDataset}${par}_${YYYY}.nc"
+	daymetOriginal="${output_dir}/${YYYY}/${configDataset}${par}_${YYYY}.nc"
   
   #Evalute the user input configuration. Is the full year to be downloaded?
   #Is forcing on?
@@ -146,7 +146,7 @@ for par in $var; do
       #Indivudal day either does not exist or forcing is on. Extract day from 
       #Rest services:
       #Output file named. This will be the netCDF downloaded from daymet
-	    daymetOriginal="${output_dir}/${configDataset}${par}_${dateIn}.nc"
+	    daymetOriginal="${output_dir}/${YYYY}/${jday}/${configDataset}${par}_${dateIn}.nc"
 	
 	    #Evaluate if the year is a leap year. daymet uses 365 day years and on leap years December 31st will be missing:
 	    #Evaluate if $YYYY is a leap year e.g. either divisible by 4 or 400, but not 100 inherently. 
