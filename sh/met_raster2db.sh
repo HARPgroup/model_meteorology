@@ -19,7 +19,7 @@ fi
 datasource=$1
 finalTiff=$2
 tstime=$3
-tsElapse=$4
+tsendtime=$4
 entity_type=$5
 varkey=$6
 extent_hydrocode=$7
@@ -29,10 +29,6 @@ force=0
 if [ $# -gt 9 ]; then
   force=${10}
 fi
-echo "Getting representative time..."
-#Get a representative numeric value of the date to be compatible with VAHydro data, specifying a compatible timezone and getting the date in seconds
-tsendtime=$(( $tstime+$tsElapse ))
-
 echo "Creating sql file to import raster..."
 #Create sql file that will add the raster (-a for amend or -d for drop and recreate) into the target table
 #The -t option tiles the raster for easier loading
