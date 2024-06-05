@@ -16,8 +16,8 @@ function downloadDaymet()
   declare -A bbox=(
   	#North and south coordinates are slighly more complicated as they are identified below using leading white space, that we remove via a second grep call
   	["north"]=$2
-	["south"]=$3
-	#For the east and west coordinates, get the first or second number that matches a literal minus sign (-) followed 
+  	["south"]=$3
+  	#For the east and west coordinates, get the first or second number that matches a literal minus sign (-) followed 
   	#by at least one digit possibly followed by a literal period (.) followed by potnetially more digits
   	["west"]=$4
   	["east"]=$5
