@@ -71,7 +71,7 @@ function downloadDaymet()
   	  fi
   	  echo "Download data from REST for ${dayIn}"
   	  #For non-leap years, query January 1st through december 31st
-  	  wget -O $daymetOriginal "https://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/2129/daymet_v4_daily_${region}_${par}_${YYYY}.nc?var=lat&var=lon&var=${par}&north=${bbox["north"]}&west=${bbox["west"]}&east=${bbox["east"]}&south=${bbox["south"]}&horizStride=1&time_start=${dateIn}T00:00:00Z&time_end=${dateIn}T23:59:59Z&timeStride=1&accept=netcdf"
+  	  wget -O $daymetOriginal "https://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/2129/daymet_v4_daily_${region}_${par}_${YYYY}.nc?var=lat&var=lon&var=${par}&north=${bbox["north"]}&west=${bbox["west"]}&east=${bbox["east"]}&south=${bbox["south"]}&horizStride=1&time_start=${dateIn}T12:00:00Z&time_end=${dateIn}T12:00:00Z&timeStride=1&accept=netcdf"
   	  
   	   
   	   
