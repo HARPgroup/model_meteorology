@@ -33,7 +33,7 @@ echo "Creating sql file to import raster..."
 #Create sql file that will add the raster (-a for amend or -d for drop and recreate) into the target table
 #The -t option tiles the raster for easier loading
 tmp_sql_file=tmp_${datasource}-${tstime}-test.sql
-tmp_tbl_name=tmp_${datasource}-${tstime}
+tmp_tbl_name="tmp_${datasource}_${tstime}"
 raster2pgsql -d -t 1000x1000 $finalTiff $tmp_tbl_name > $tmp_sql_file
 
 echo "Sending raster to db..."
