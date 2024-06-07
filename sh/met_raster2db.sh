@@ -33,7 +33,8 @@ echo "Creating sql file to import raster..."
 #Create sql file that will add the raster (-a for amend or -d for drop and recreate) into the target table
 #The -t option tiles the raster for easier loading
 tmp_sql_file=tmp_${datasource}-${tstime}-test.sql
-raster2pgsql -d -t 1000x1000 $finalTiff tmp_${datasource} > $tmp_sql_file
+tmp_tbl_name=tmp_${datasource}-${tstime}
+raster2pgsql -d -t 1000x1000 $finalTiff $tmp_tbl_name > $tmp_sql_file
 
 echo "Sending raster to db..."
 #Execute sql file to bring rasters into database (alpha)
@@ -71,7 +72,7 @@ echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, enti
 	--there is no matching data in dh_timeseries_weather
 	left outer join dh_timeseries_weather as w
 		on (f.hydroid = w.featureid and w.tstime = '${tstime}' and w.varid = v.hydroid) 
-	left outer join tmp_${datasource} as met
+	left outer join ${tmp_tbl_name} as met
 		on (1 = 1)
 	--By specifying tid = NULL we ensure this query returns no rows if there is a match within dh_timeseries_weather
 	WHERE w.tid is null
@@ -85,10 +86,11 @@ echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, enti
 	--there is no matching data in dh_timeseries_weather
 	left outer join dh_timeseries_weather as w
 		on (f.hydroid = w.featureid and w.tstime = '${tstime}' and w.varid = v.hydroid) 
-	left outer join tmp_${datasource} as met
+	left outer join ${tmp_tbl_name} as met
 		on (1 = 1)
 	--By specifying tid = NULL we ensure this query returns no rows if there is a match within dh_timeseries_weather
 	WHERE w.tid is null
 		AND f.hydrocode = '${extent_hydrocode}';" | psql -h $db_host -d $db_name
 echo "Removing unecessary files..."
+echo "drop table ${tmp_tbl_name};" | psql -h $db_host -d $db_name
 rm $tmp_sql_file
