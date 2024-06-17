@@ -93,7 +93,7 @@ function downloadDaymet()
       
     local finalTiff="ORIGINAL_${configDataset}${dateIn}${configExt}"
       
-    #Send this band to its own raster
+    #Send this band to its own raster as an ESRI BIL file with headers, EHDr
     gdal_translate -b 1 NETCDF:"${daymetOriginal}":prcp -of "EHdr" $finalTiff
 	 echo "daymet data downloaded as NETCDF and translated to $finalTiff"
   #End var for loop
