@@ -4,12 +4,13 @@ varkey=$2
 raster_sql_file=$3
 db_host=$4
 db_name=$5
+NL=$'\n'
 
-raster_sql="\\set band '1'
-\\set varkey '$varkey'
-\\set hydrocode  '$hydrocode'
-\\set fname '$raster_sql_file'
-
+raster_sql="\\set band '1' ${NL}
+\\set varkey '$varkey' ${NL}
+\\set hydrocode  '$hydrocode' ${NL}
+\\set fname '$raster_sql_file' ${NL}
+ ${NL}
 
 copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date, 
     extract(month from to_timestamp(met.tsendtime)) as mo,
