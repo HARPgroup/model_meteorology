@@ -2,6 +2,8 @@
 hydrocode=$1
 varkey=$2
 raster_sql_file=$3
+db_host=$4
+db_name=$5
 
 raster_sql="\\set band '1'
 \\set varkey '$varkey'
