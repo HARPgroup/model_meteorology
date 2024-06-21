@@ -1,0 +1,47 @@
+#!/bin/bash
+hydrocode=$1
+varkey=$2
+raster_sum_file=$3
+db_host=$4
+db_name=$5
+clean=$6
+raster_sql_file=${raster_sum_file}.sql
+raster_sql="\\set band '1' \n
+\\set varkey '$varkey' \n
+\\set hydrocode  '$hydrocode' \n
+\\set fname '${raster_sum_file}' \n
+ 
+
+copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date, 
+    extract(month from to_timestamp(met.tsendtime)) as mo,
+    (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_mm,
+    0.0393701 * (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_in
+  from dh_feature as f
+  left outer join field_data_dh_geofield as fgeo
+  on (
+    fgeo.entity_id = f.hydroid
+    and fgeo.entity_type = 'dh_feature'
+  )
+  left outer join dh_variabledefinition as v
+  on (
+    v.varkey = :'varkey'
+  )
+  left outer join dh_feature as mcov
+  on (
+    mcov.hydrocode = 'cbp6_met_coverage'
+  )
+  left outer join dh_timeseries_weather as met
+  on (
+    mcov.hydroid = met.featureid and met.varid = v.hydroid
+  )
+  where f.hydrocode = :'hydrocode'
+  order by met.tsendtime
+) to :'fname' WITH HEADER CSV;"
+# turn off the expansion of the asterisk
+set -f
+echo -e $raster_sql > $raster_sql_file 
+cat $raster_sql_file | psql -h $db_host $db_name
+# clean up
+if [ "$clean" -ne "n" ]; then
+  rm $raster_sql_file
+]
