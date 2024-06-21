@@ -1,0 +1,38 @@
+#!/bin/bash
+hydrocode=$1
+varkey=$2
+raster_sql_file=$3
+
+raster_sql="\\set band '1'\n"
+raster_sql="$raster_sql \\set varkey '$varkey'\n"
+raster_sql="$raster_sql \\set hydrocode  '$hydrocode'"
+raster_sql="$raster_sql \\set fname '$raster_sql_file'"
+
+raster_sql="$raster_sql copy ( \n"
+raster_sql="$raster_sql select met.featureid, to_timestamp(met.tsendtime) as obs_date, \n"
+raster_sql="$raster_sql     extract(month from to_timestamp(met.tsendtime)) as mo,\n"
+raster_sql="$raster_sql     (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_mm,\n"
+raster_sql="$raster_sql     0.0393701 * (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_in\n"
+raster_sql="$raster_sql   from dh_feature as f\n"
+raster_sql="$raster_sql   left outer join field_data_dh_geofield as fgeo\n"
+raster_sql="$raster_sql   on (\n"
+raster_sql="$raster_sql     fgeo.entity_id = f.hydroid\n"
+raster_sql="$raster_sql     and fgeo.entity_type = 'dh_feature'\n"
+raster_sql="$raster_sql   )\n"
+raster_sql="$raster_sql   left outer join dh_variabledefinition as v\n"
+raster_sql="$raster_sql   on (\n"
+raster_sql="$raster_sql     v.varkey = :'varkey'\n"
+raster_sql="$raster_sql   )\n"
+raster_sql="$raster_sql   left outer join dh_feature as mcov\n"
+raster_sql="$raster_sql   on (\n"
+raster_sql="$raster_sql     mcov.hydrocode = 'cbp6_met_coverage'\n"
+raster_sql="$raster_sql   )\n"
+raster_sql="$raster_sql   left outer join dh_timeseries_weather as met\n"
+raster_sql="$raster_sql   on (\n"
+raster_sql="$raster_sql     mcov.hydroid = met.featureid and met.varid = v.hydroid\n"
+raster_sql="$raster_sql   )\n"
+raster_sql="$raster_sql   where f.hydrocode = :'hydrocode'\n"
+raster_sql="$raster_sql   order by met.tsendtime\n"
+raster_sql="$raster_sql ) to :'fname' WITH HEADER CSV;\n"
+
+echo $raster_sql > $raster_sql_file 
