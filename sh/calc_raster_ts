@@ -10,10 +10,11 @@ raster_sql="\\set band '1'
 \\set hydrocode  '$hydrocode'
 \\set fname '$raster_sql_file'
 
+
 copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date, 
     extract(month from to_timestamp(met.tsendtime)) as mo,
     (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_mm,
-    0.0393701 * (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_in
+    0.0393701 \* (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_in
   from dh_feature as f
   left outer join field_data_dh_geofield as fgeo
   on (
