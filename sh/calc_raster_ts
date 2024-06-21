@@ -4,6 +4,7 @@ varkey=$2
 raster_sum_file=$3
 db_host=$4
 db_name=$5
+clean=$6
 raster_sql_file=${raster_sum_file}.sql
 raster_sql="\\set band '1' \n
 \\set varkey '$varkey' \n
@@ -40,3 +41,7 @@ copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date,
 set -f
 echo -e $raster_sql > $raster_sql_file 
 cat $raster_sql_file | psql -h $db_host $db_name
+# clean up
+if [ "$clean" -ne "n" ]; then
+  rm $raster_sql_file
+]
