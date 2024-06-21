@@ -1,14 +1,14 @@
 #!/bin/bash
 hydrocode=$1
 varkey=$2
-raster_sql_file=$3
+raster_sum_file=$3
 db_host=$4
 db_name=$5
-
+raster_sql_file=${raster_sum_file}.sql
 raster_sql="\\set band '1' \n
 \\set varkey '$varkey' \n
 \\set hydrocode  '$hydrocode' \n
-\\set fname '$raster_sql_file' \n
+\\set fname '${raster_sum_file}' \n
  
 
 copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date, 
