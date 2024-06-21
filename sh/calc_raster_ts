@@ -4,13 +4,12 @@ varkey=$2
 raster_sql_file=$3
 db_host=$4
 db_name=$5
-NL=$'\n'
 
-raster_sql="\\set band '1' ${NL}
-\\set varkey '$varkey' ${NL}
-\\set hydrocode  '$hydrocode' ${NL}
-\\set fname '$raster_sql_file' ${NL}
- ${NL}
+raster_sql="\\set band '1' 
+\\set varkey '$varkey' 
+\\set hydrocode  '$hydrocode' 
+\\set fname '$raster_sql_file' 
+ 
 
 copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date, 
     extract(month from to_timestamp(met.tsendtime)) as mo,
@@ -39,5 +38,5 @@ copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date,
 ) to :'fname' WITH HEADER CSV;"
 # turn off the expansion of the asterisk
 set -f
-echo $raster_sql > $raster_sql_file 
+echo -e $raster_sql > $raster_sql_file 
 cat $raster_sql_file | psql -h $db_host $db_name
