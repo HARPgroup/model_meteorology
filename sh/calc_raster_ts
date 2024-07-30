@@ -43,10 +43,8 @@ copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date,
 set -f
 echo -e $raster_sql > $raster_sql_file 
 cat $raster_sql_file | psql -h $db_host $db_name
-<<<<<<< HEAD
-=======
+
 # clean up
 if [ "$clean" -ne "n" ]; then
   rm $raster_sql_file
 ]
->>>>>>> c793fcf0ba50440aa933d48f903252c2a201e73f
