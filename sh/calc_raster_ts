@@ -12,7 +12,9 @@ raster_sql="\\set band '1' \n
  
 
 copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date, 
+    extract(year from to_timestamp(met.tsendtime)) as yr,
     extract(month from to_timestamp(met.tsendtime)) as mo,
+    extract(day from to_timestamp(met.tsendtime)) as da,
     (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_mm,
     0.0393701 * (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_in
   from dh_feature as f
