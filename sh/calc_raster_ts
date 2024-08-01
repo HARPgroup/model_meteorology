@@ -47,4 +47,4 @@ cat $raster_sql_file | psql -h $db_host $db_name
 # clean up
 if [ "$clean" -ne "n" ]; then
   rm $raster_sql_file
-]
+fi
