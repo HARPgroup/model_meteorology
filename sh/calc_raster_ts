@@ -46,5 +46,6 @@ cat $raster_sql_file | psql -h $db_host $db_name
 
 # clean up
 if [ "$clean" != "n" ]; then
+  echo "Removing ${raster_sql_file}"
   rm $raster_sql_file
 fi
