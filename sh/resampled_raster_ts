@@ -1,22 +1,24 @@
 #!/bin/bash
 hydrocode=$1
 varkey=$2
-raster_sql_file=$3
-raster_sum_file=$4
-db_host=$5
-db_name=$6
+resample_varkey=$3
+raster_sql_file=$4
+raster_sum_file=$5
+db_host=$6
+db_name=$7
 start_epoch=-1
 end_epoch=-1
-if [ $# -gt 6 ]; then
-  start_epoch=$7
-fi
 if [ $# -gt 7 ]; then
-  end_epoch=$8
+  start_epoch=$8
 fi
-echo "called calc_raster_ts $hydrocode $varkey $raster_sql_file $raster_sum_file $db_host $db_name $start_epoch $end_epoch"
+if [ $# -gt 8 ]; then
+  end_epoch=$9
+fi
+echo "called resampled_raster_ts $hydrocode $varkey $resample_varkey $raster_sql_file $raster_sum_file $db_host $db_name $start_epoch $end_epoch"
 
 raster_sql="\\set band '1' \n
 \\set varkey '$varkey' \n
+\\set resample_varkey '$resample_varkey' \n
 \\set hydrocode  '$hydrocode' \n
 \\set fname '${raster_sum_file}' \n
 \\\timing ON \n
@@ -27,8 +29,8 @@ copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date,
     extract(month from to_timestamp(met.tsendtime)) as mo,
     extract(day from to_timestamp(met.tsendtime)) as da,
     extract(hour from to_timestamp(met.tsendtime)) as hr,
-    (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_mm,
-    0.0393701 * (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_in
+    (ST_summarystats(st_clip(st_resample(met.rast, rt.rast), fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_mm,
+    0.0393701 * (ST_summarystats(st_clip(st_resample(met.rast, rt.rast), fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_in
   from dh_feature as f
   left outer join field_data_dh_geofield as fgeo
   on (
@@ -38,6 +40,10 @@ copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date,
   left outer join dh_variabledefinition as v
   on (
     v.varkey = :'varkey'
+  )
+  left outer join raster_templates as rt
+  on (
+    rt.varkey = :'resample_varkey'
   )
   left outer join dh_feature as mcov
   on (
