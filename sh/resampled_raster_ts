@@ -1,61 +1,61 @@
 #!/bin/bash
+if [ $# -lt 7 ]; then
+  echo "Use: resampled_raster_ts hydrocode ftype varkey resample_varkey raster_sql_file raster_sum_file db_host db_name [start_epoch] [end_epoch]"
+  exit
+fi
 hydrocode=$1
-varkey=$2
-resample_varkey=$3
-raster_sql_file=$4
-raster_sum_file=$5
-db_host=$6
-db_name=$7
+ftype=$2
+varkey=$3
+resample_varkey=$4
+raster_sql_file=$5
+raster_sum_file=$6
+db_host=$7
+db_name=$8
 start_epoch=-1
 end_epoch=-1
-if [ $# -gt 7 ]; then
-  start_epoch=$8
-fi
 if [ $# -gt 8 ]; then
-  end_epoch=$9
+  start_epoch=$9
 fi
-echo "called resampled_raster_ts $hydrocode $varkey $resample_varkey $raster_sql_file $raster_sum_file $db_host $db_name $start_epoch $end_epoch"
+if [ $# -gt 9 ]; then
+  end_epoch=${10}
+fi
+echo "called resampled_raster_ts $hydrocode $ftype $varkey $resample_varkey $raster_sql_file $raster_sum_file $db_host $db_name $start_epoch $end_epoch"
 
 raster_sql="\\set band '1' \n
+\\set ftype '$ftype' \n
 \\set varkey '$varkey' \n
 \\set resample_varkey '$resample_varkey' \n
 \\set hydrocode  '$hydrocode' \n
 \\set fname '${raster_sum_file}' \n
+\\set start_epoch $start_epoch \n
+\\set end_epoch $end_epoch \n
+
+select hydroid as met_varid from dh_variabledefinition where varkey = :'varkey' \\gset \n
+select hydroid as fid from dh_feature where hydrocode = :'hydrocode' and ftype = :'ftype' \\gset \n
+select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\gset \n
+
+
 \\\timing ON \n
 
-copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date, 
+copy ( 
+
+  select met.featureid, to_timestamp(met.tsendtime) as obs_date,
     met.tstime, met.tsendtime,
     extract(year from to_timestamp(met.tsendtime)) as yr,
     extract(month from to_timestamp(met.tsendtime)) as mo,
     extract(day from to_timestamp(met.tsendtime)) as da,
     extract(hour from to_timestamp(met.tsendtime)) as hr,
-    (ST_summarystats(st_clip(st_resample(met.rast, rt.rast), fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_mm,
-    0.0393701 * (ST_summarystats(st_clip(st_resample(met.rast, rt.rast), fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_in
-  from dh_feature as f
-  left outer join field_data_dh_geofield as fgeo
-  on (
-    fgeo.entity_id = f.hydroid
+    (ST_summarystats(st_clip(st_resample(met.rast,rt.rast), fgeo.dh_geofield_geom), 1, TRUE)).mean as precip_mm,
+    0.0393701 * (ST_summarystats(st_clip(st_resample(met.rast,rt.rast), fgeo.dh_geofield_geom), 1, TRUE)).mean as precip_in
+  from dh_timeseries_weather as met, field_data_dh_geofield as fgeo, raster_templates as rt
+  where met.featureid = :covid
+    and met.varid = :met_varid
+    and ( (met.tstime >= :start_epoch) OR (-1 = :start_epoch) )
+    and ( (met.tsendtime <= :end_epoch) OR (-1 = :end_epoch) )
     and fgeo.entity_type = 'dh_feature'
-  )
-  left outer join dh_variabledefinition as v
-  on (
-    v.varkey = :'varkey'
-  )
-  left outer join raster_templates as rt
-  on (
-    rt.varkey = :'resample_varkey'
-  )
-  left outer join dh_feature as mcov
-  on (
-    mcov.hydrocode = 'cbp6_met_coverage'
-  )
-  left outer join dh_timeseries_weather as met
-  on (
-    mcov.hydroid = met.featureid and met.varid = v.hydroid
-  )
-  where f.hydrocode = :'hydrocode'
-  and ( (met.tstime >= $start_epoch) or ($start_epoch = -1) )
-  and ( (met.tsendtime <= $end_epoch) or ($end_epoch = -1) )
+    and fgeo.entity_id = :fid
+    and rt.varkey = :'resample_varkey'
+    and (fgeo.dh_geofield_geom && met.bbox )
   order by met.tsendtime
 ) to :'fname' WITH HEADER CSV;"
 # turn off the expansion of the asterisk
