@@ -42,7 +42,7 @@ copy (
 	  WHERE hydrocode = :'hydrocode'
 	),
 	metUnion as (
-		Select met.featureid, met.tsendtime,
+		Select met.featureid, met.tstime, met.tsendtime,
 			st_union(met.rast) as rast
 		FROM usgs_features as f
 		left outer join field_data_dh_geofield as fgeo
