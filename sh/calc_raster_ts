@@ -15,42 +15,68 @@ if [ $# -gt 7 ]; then
 fi
 echo "called calc_raster_ts $hydrocode $varkey $raster_sql_file $raster_sum_file $db_host $db_name $start_epoch $end_epoch"
 
-raster_sql="\\set band '1' \n
+raster_sql="
+\\set band '1' \n
 \\set varkey '$varkey' \n
 \\set hydrocode  '$hydrocode' \n
 \\set fname '${raster_sum_file}' \n
+-- sets all integer feature and varid with query 
+select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\gset \n
+
 \\\timing ON \n
 
-copy ( select met.featureid, to_timestamp(met.tsendtime) as obs_date, 
-    met.tstime, met.tsendtime,
-    extract(year from to_timestamp(met.tsendtime)) as yr,
-    extract(month from to_timestamp(met.tsendtime)) as mo,
-    extract(day from to_timestamp(met.tsendtime)) as da,
-    extract(hour from to_timestamp(met.tsendtime)) as hr,
-    (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_mm,
-    0.0393701 * (ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :band, TRUE)).mean as precip_in
-  from dh_feature as f
-  left outer join field_data_dh_geofield as fgeo
-  on (
-    fgeo.entity_id = f.hydroid
-    and fgeo.entity_type = 'dh_feature'
-  )
-  left outer join dh_variabledefinition as v
-  on (
-    v.varkey = :'varkey'
-  )
-  left outer join dh_feature as mcov
-  on (
-    mcov.hydrocode = 'cbp6_met_coverage'
-  )
-  left outer join dh_timeseries_weather as met
-  on (
-    mcov.hydroid = met.featureid and met.varid = v.hydroid
-  )
-  where f.hydrocode = :'hydrocode'
-  and ( (met.tstime >= $start_epoch) or ($start_epoch = -1) )
-  and ( (met.tsendtime <= $end_epoch) or ($end_epoch = -1) )
-  order by met.tsendtime
+copy ( 
+	WITH usgs_features AS (
+	  SELECT * 
+	  FROM  dh_feature
+	  WHERE hydrocode = :'hydrocode'
+	),
+	metUnion as (
+		Select met.featureid, met.tsendtime,
+			st_union(met.rast) as rast
+		FROM usgs_features as f
+		left outer join field_data_dh_geofield as fgeo
+		on (
+			fgeo.entity_id = f.hydroid
+			and fgeo.entity_type = 'dh_feature' 
+		) 
+		JOIN(
+			select *
+			from dh_timeseries_weather as met
+			left outer join dh_variabledefinition as b
+				on (met.varid = b.hydroid) 
+			where b.varkey=:'varkey'
+				and ( (met.tstime >= $start_epoch) or ($start_epoch = -1) )
+				and ( (met.tsendtime <= $end_epoch) or ($end_epoch = -1) )
+				and met.featureid = :covid
+		) AS met
+		ON ST_Intersects(ST_ConvexHull(met.rast),fgeo.dh_geofield_geom)
+		
+		group by met.featureid, met.tsendtime
+	),
+	met as (
+		Select met.featureid, to_timestamp(met.tsendtime) as obs_date,
+			extract(year from to_timestamp(met.tsendtime)) as yr,
+			extract(month from to_timestamp(met.tsendtime)) as mo,
+			extract(day from to_timestamp(met.tsendtime)) as da,
+			extract(hour from to_timestamp(met.tsendtime)) as hr,
+			met.tstime,met.tsendtime,
+			(ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :'band', TRUE)).mean as stats
+		FROM usgs_features as f
+		left outer join field_data_dh_geofield as fgeo
+		on (
+			fgeo.entity_id = f.hydroid
+			and fgeo.entity_type = 'dh_feature' 
+		) 
+		JOIN metUnion AS met
+		ON ST_Intersects(ST_ConvexHull(met.rast),fgeo.dh_geofield_geom)
+	)
+	select featureid, obs_date, 
+		tstime,tsendtime,
+		yr, mo, da, hr, 
+		0.0393701 * stats precip_in
+	from met
+	order by met.tsendtime
 ) to :'fname' WITH HEADER CSV;"
 # turn off the expansion of the asterisk
 set -f
