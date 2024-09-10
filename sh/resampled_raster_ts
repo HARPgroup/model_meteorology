@@ -62,7 +62,7 @@ copy (
 		) AS met
 		ON ST_Intersects(ST_ConvexHull(met.rast),fgeo.dh_geofield_geom)
 		
-		group by met.featureid, met.tsendtime
+		group by met.featureid, met.tsendtime, met.tstime
 	),
 	met as (
 		Select met.featureid, to_timestamp(met.tsendtime) as obs_date,
