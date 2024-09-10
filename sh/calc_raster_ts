@@ -48,7 +48,7 @@ copy (
 			where b.varkey=:'varkey'
 				and ( (met.tstime >= $start_epoch) or ($start_epoch = -1) )
 				and ( (met.tsendtime <= $end_epoch) or ($end_epoch = -1) )
-				and met.featureid = :covid
+				and met.featureid = :'covid'
 		) AS met
 		ON ST_Intersects(ST_ConvexHull(met.rast),fgeo.dh_geofield_geom)
 		
