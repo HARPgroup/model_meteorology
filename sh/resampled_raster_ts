@@ -38,15 +38,18 @@ select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\
 \\\timing ON \n
 
 copy ( 
-
+select featureid, obs_date, yr, mo, da, hr, 
+  (stats).mean as precip_mm, 
+  0.0393701 * (stats).mean as precip_in, 
+  (stats).count
+from (
   select met.featureid, to_timestamp(met.tsendtime) as obs_date,
     met.tstime, met.tsendtime,
     extract(year from to_timestamp(met.tsendtime)) as yr,
     extract(month from to_timestamp(met.tsendtime)) as mo,
     extract(day from to_timestamp(met.tsendtime)) as da,
     extract(hour from to_timestamp(met.tsendtime)) as hr,
-    (ST_summarystats(st_clip(st_resample(met.rast,rt.rast), fgeo.dh_geofield_geom), 1, TRUE)).mean as precip_mm,
-    0.0393701 * (ST_summarystats(st_clip(st_resample(met.rast,rt.rast), fgeo.dh_geofield_geom), 1, TRUE)).mean as precip_in
+    (ST_summarystats(st_clip(st_resample(met.rast, rt.rast), fgeo.dh_geofield_geom), 1, TRUE)) as stats
   from dh_timeseries_weather as met, field_data_dh_geofield as fgeo, raster_templates as rt
   where met.featureid = :covid
     and met.varid = :met_varid
@@ -57,6 +60,7 @@ copy (
     and rt.varkey = :'resample_varkey'
     and (fgeo.dh_geofield_geom && met.bbox )
   order by met.tsendtime
+) as foo
 ) to :'fname' WITH HEADER CSV;"
 # turn off the expansion of the asterisk
 set -f
