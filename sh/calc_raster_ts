@@ -20,7 +20,6 @@ raster_sql="
 \\set varkey '$varkey' \n
 \\set hydrocode  '$hydrocode' \n
 \\set fname '${raster_sum_file}' \n
--- sets all integer feature and varid with query 
 select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\gset \n
 
 \\\timing ON \n

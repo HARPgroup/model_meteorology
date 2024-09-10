@@ -30,7 +30,6 @@ raster_sql="\\set band '1' \n
 \\set start_epoch $start_epoch \n
 \\set end_epoch $end_epoch \n
 
--- sets all integer feature and varid with query 
 select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\gset \n
 
 
