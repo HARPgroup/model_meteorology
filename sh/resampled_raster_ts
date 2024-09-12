@@ -60,7 +60,7 @@ copy (
 				and ( (met.tsendtime <= $end_epoch) or ($end_epoch = -1) )
 				and met.featureid = :covid
 		) AS met
-		ON ST_Intersects(ST_ConvexHull(met.rast),fgeo.dh_geofield_geom)
+		ON fgeo.dh_geofield_geom && met.bbox
 		
 		group by met.featureid, met.tsendtime, met.tstime
 	),
