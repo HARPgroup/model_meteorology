@@ -8,10 +8,10 @@ ds <- RomDataSource$new(site, rest_uname = rest_uname)
 ds$get_token(rest_pw = rest_pw)
 
 rodf <- data.frame(
-  'model_version' = c('cbp-6.0', 'cbp-6.0'),
-  'runid' = c('met2date', 'met2date'),
-  'metric' = c('PRC_anomaly_count','PRC_daily_error_count'),
-  'runlabel' = c('PRC_anomaly_count', 'PRC_daily_error_count')
+  'model_version' = c('cbp-6.0', 'cbp-6.0', 'cbp-6.0'),
+  'runid' = c('met2date', 'met2date', 'met2date'),
+  'metric' = c('PRC_anomaly_count','PRC_daily_error_count', 'precip_annual_min_in'),
+  'runlabel' = c('PRC_anomaly_count', 'PRC_daily_error_count', 'precip_annual_min_in')
 )
 met_data <- om_vahydro_metric_grid(
   metric = metric, runids = rodf, bundle = "landunit", ftype = "cbp6_landseg",
