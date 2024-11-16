@@ -40,6 +40,7 @@ copy (
 	  SELECT * 
 	  FROM  dh_feature
 	  WHERE hydrocode = :'hydrocode'
+          AND ftype = :'ftype'
 	),
 	metUnion as (
 		Select met.featureid, met.tstime, met.tsendtime,
