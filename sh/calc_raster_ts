@@ -5,6 +5,8 @@ raster_sql_file=$3
 raster_sum_file=$4
 db_host=$5
 db_name=$6
+bundle=$7
+ftype=$8
 start_epoch=-1
 end_epoch=-1
 if [ $# -gt 6 ]; then
@@ -13,7 +15,7 @@ fi
 if [ $# -gt 7 ]; then
   end_epoch=$8
 fi
-echo "called calc_raster_ts $hydrocode $varkey $raster_sql_file $raster_sum_file $db_host $db_name $start_epoch $end_epoch"
+echo "called calc_raster_ts $hydrocode $varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $start_epoch $end_epoch"
 
 raster_sql="
 \\set band '1' \n
@@ -29,6 +31,8 @@ copy (
 	  SELECT * 
 	  FROM  dh_feature
 	  WHERE hydrocode = :'hydrocode'
+	  AND bundle = :'bundle'
+	  AND ftype = :'ftype'
 	),
 	metUnion as (
 		Select met.featureid, met.tstime,met.tsendtime,
@@ -47,7 +51,7 @@ copy (
 			where b.varkey=:'varkey'
 				and ( (met.tstime >= $start_epoch) or ($start_epoch = -1) )
 				and ( (met.tsendtime <= $end_epoch) or ($end_epoch = -1) )
-				and met.featureid = :'covid'
+				and met.featureid = :covid
 		) AS met
 		ON fgeo.dh_geofield_geom && met.bbox
 		
