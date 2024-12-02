@@ -19,9 +19,13 @@ echo "called calc_raster_ts $hydrocode $varkey $raster_sql_file $raster_sum_file
 
 raster_sql="
 \\set band '1' \n
-\\set varkey '$varkey' \n
 \\set hydrocode  '$hydrocode' \n
+\\set varkey '$varkey' \n
 \\set fname '${raster_sum_file}' \n
+\\set bundle '${bundle}' \n
+\\set ftype '${ftype}' \n
+
+
 select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\gset \n
 
 \\\timing ON \n
