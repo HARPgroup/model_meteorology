@@ -25,8 +25,8 @@ fi
 echo "called calc_daily_ts $hourlyvarkey $dailyvarkey $raster_sql_file $db_host $db_name  $start_date $end_date"
 
 raster_sql="
-\\set hourlyvarkeyID '$hourlyvarkeyID' \n
-\\set dailyvarkeyID '$dailyvarkeyID' \n
+\\set hourlyvarkey '$hourlyvarkey' \n
+\\set dailyvarkey '$dailyvarkey' \n
 \\set start_epoch $start_epoch \n
 \\set end_epoch $end_epoch \n
 
@@ -48,11 +48,11 @@ on(
 )
 left outer join dh_variabledefinition as daily
 on(
-  daily.varkey = :'dailyvarkeyID'
+  daily.varkey = :'dailyvarkey'
 )
 where dupe.tid is null
 AND daily.hydroid is not null
-AND hour.varkey = :'hourlyvarkeyID'
+AND hour.varkey = :'hourlyvarkey'
 and ( (data.tstime >=:start_epoch) or (:start_epoch = -1) )
 and ( (data.tsendtime <=:end_epoch) or (:end_epoch = -1) )
 GROUP BY data.featureid, data.entity_type, data.bbox, daily.hydroid,
