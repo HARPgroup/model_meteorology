@@ -36,7 +36,7 @@ delete from dh_timeseries_weather as data
 using dh_variabledefinition as variables
 where data.varid = variables.hydroid
   and variables.varkey = :'dailyvarkey'
-  and ( (data.tstime >= :start_epoch) or (:start_epoch = -1) )
+  and ( (data.tsendtime >= :start_epoch) or (:start_epoch = -1) )
   and ( (data.tsendtime <= :end_epoch) or (:end_epoch = -1) )
 ;"
 
