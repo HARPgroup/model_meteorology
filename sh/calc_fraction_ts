@@ -31,7 +31,7 @@ rastersql="
 \\set start_epoch $start_epoch \n
 \\set end_epoch $end_epoch \n
 
-insert into tmp_dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid)
+insert into dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid)
 select hourly.tstime,hourly.tsendtime, hourly.featureid, hourly.entity_type, st_mapalgebra(
     hourly.rast, 1, 
     St_Reclass(daily.rast, 1, '[0-0]:1-1, [0.0000001-99999]:0.0000001-99999', '64BF',9999), 1, 
@@ -45,7 +45,7 @@ on (
  and hourly.varid = dupe.varid
  and hourly.bbox = dupe.bbox
 )
-Left outer join tmp_dh_timeseries_weather as daily 
+Left outer join dh_timeseries_weather as daily 
 on(
 extract(day from to_timestamp(hourly.tsendtime)) = extract(day from to_timestamp(daily.tsendtime)) 
   and extract(year from to_timestamp(hourly.tsendtime)) = extract(year from to_timestamp(daily.tsendtime)) 
