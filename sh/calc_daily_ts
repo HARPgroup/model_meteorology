@@ -53,7 +53,7 @@ on(
 where dupe.tid is null
 AND daily.hydroid is not null
 AND hour.varkey = :'hourlyvarkey'
-and ( (data.tstime >=:start_epoch) or (:start_epoch = -1) )
+and ( (data.tsendtime >=:start_epoch) or (:start_epoch = -1) )
 and ( (data.tsendtime <=:end_epoch) or (:end_epoch = -1) )
 GROUP BY data.featureid, data.entity_type, data.bbox, daily.hydroid,
 extract(day from to_timestamp(data.tsendtime)), 
