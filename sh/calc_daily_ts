@@ -1,0 +1,66 @@
+hourlyvarkey=$1
+dailyvarkey=$2
+raster_sql_file=$3
+db_host=$4
+db_name=$5
+start_date=-1
+end_date=-1
+if [ $# -gt 5 ]; then
+  start_date=$6
+fi
+if [ $# -gt 6 ]; then
+  end_date=$7
+fi
+if [ '$start_date' == "-1" ]; then
+  start_epoch='-1'
+else
+  start_epoch=$(date -d '$start_date' +%s)
+fi
+if [ '$end_date' == '-1' ]; then
+ end_epoch='-1' # Or leave it undefined
+else
+  end_epoch=$(date -d '$end_date' +%s)
+fi
+
+echo "called calc_daily_ts $hourlyvarkey $dailyvarkey $raster_sql_file $db_host $db_name  $start_date $end_date"
+
+raster_sql="
+\\set hourlyvarkey '$hourlyvarkey' \n
+\\set dailyvarkey '$dailyvarkey' \n
+\\set start_epoch $start_epoch \n
+\\set end_epoch $end_epoch \n
+
+
+
+insert into dh_timeseries_weather (tstime,tsendtime, featureid, entity_type, rast, bbox, varid)
+select min(data.tstime),max(data.tsendtime), data.featureid, data.entity_type, ST_Union(data.rast, 'SUM') as rast, data.bbox, daily.hydroid as varid
+from dh_timeseries_weather as data
+left outer join dh_timeseries_weather as dupe
+on (
+ data.tstime = dupe.tstime
+ and data.tsendtime = dupe.tsendtime
+ and data.varid = dupe.varid
+ and data.bbox = dupe.bbox
+)
+left outer join dh_variabledefinition as hour
+on(
+  data.varid = hour.hydroid
+)
+left outer join dh_variabledefinition as daily
+on(
+  daily.varkey = :'dailyvarkey'
+)
+where dupe.tid is null
+AND daily.hydroid is not null
+AND hour.varkey = :'hourlyvarkey'
+and ( (data.tsendtime >=:start_epoch) or (:start_epoch = -1) )
+and ( (data.tsendtime <=:end_epoch) or (:end_epoch = -1) )
+GROUP BY data.featureid, data.entity_type, data.bbox, daily.hydroid,
+extract(day from to_timestamp(data.tsendtime)), 
+extract(year from to_timestamp(data.tsendtime)), 
+extract(month from to_timestamp(data.tsendtime));"
+
+# turn off the expansion of the asterisk
+set -f
+echo -e $raster_sql > $raster_sql_file 
+cat $raster_sql_file | psql -h $db_host $db_name
