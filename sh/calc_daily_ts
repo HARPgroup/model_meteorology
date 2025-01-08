@@ -11,15 +11,15 @@ fi
 if [ $# -gt 6 ]; then
   end_date=$7
 fi
-if [ '$start_date' == "-1" ]; then
+if [ $start_date == "-1" ]; then
   start_epoch='-1'
 else
-  start_epoch=$(date -d '$start_date' +%s)
+  start_epoch=$(date -d $start_date +%s)
 fi
-if [ '$end_date' == '-1' ]; then
+if [ $end_date == '-1' ]; then
  end_epoch='-1' # Or leave it undefined
 else
-  end_epoch=$(date -d '$end_date' +%s)
+  end_epoch=$(date -d $end_date +%s)
 fi
 
 echo "called calc_daily_ts $hourlyvarkey $dailyvarkey $raster_sql_file $db_host $db_name  $start_date $end_date"
