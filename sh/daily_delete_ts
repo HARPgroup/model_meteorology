@@ -28,7 +28,7 @@ fi
 echo "called daily_delete_ts $dailyvarkey $raster_sql_file $db_host $db_name $start_date $end_date"
 
 deletedaily="
-\\set dailyvarkeyID '$dailyvarkey' \n
+\\set dailyvarkey '$dailyvarkey' \n
 \\set start_epoch $start_epoch \n
 \\set end_epoch $end_epoch \n
 
