@@ -56,9 +56,9 @@ AND hour.varkey = :'hourlyvarkey'
 and ( (data.tsendtime >=:start_epoch) or (:start_epoch = -1) )
 and ( (data.tsendtime <:end_epoch) or (:end_epoch = -1) )
 GROUP BY data.featureid, data.entity_type, data.bbox, daily.hydroid,
-extract(day from to_timestamp(data.tsendtime)), 
-extract(year from to_timestamp(data.tsendtime)), 
-extract(month from to_timestamp(data.tsendtime));"
+extract(day from to_timestamp(data.tsendtime) at time zone 'UTC'), 
+extract(year from to_timestamp(data.tsendtime) at time zone 'UTC'), 
+extract(month from to_timestamp(data.tsendtime) at time zone 'UTC');"
 
 # turn off the expansion of the asterisk
 set -f
