@@ -32,47 +32,44 @@ rastersql="
 \\set end_epoch $end_epoch \n
 
 insert into dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid) \n
-select hourly.tstime,hourly.tsendtime, hourly.featureid, hourly.entity_type, st_mapalgebra( \n
-    hourly.rast, 1, \n
-    St_Reclass(daily.rast, 1, '[0-0]:1-1, [0.0000001-99999]:0.0000001-99999', '64BF',9999), 1, \n
-    '[rast1]/ [rast2]' \n
-  ) as rast,  hourly.bbox, fraction.hydroid as varid \n
-from dh_timeseries_weather as hourly \n
-left outer join dh_variabledefinition as fraction  \n
-on( \n
-   fraction.varkey = :'fractionvarkey' \n
-) \n
-left outer join tmp_dh_timeseries_weather as dupe \n
-on ( \n
- hourly.tstime = dupe.tstime \n
- and hourly.tsendtime = dupe.tsendtime \n
- and fraction.hydroid = dupe.varid \n
- and hourly.bbox = dupe.bbox \n
-)
-Left outer join dh_timeseries_weather as daily  \n
-on( \n
-extract(day from to_timestamp(hourly.tsendtime) at time zone 'UTC') = extract(day from to_timestamp(daily.tsendtime) at time zone 'UTC') \n
-  and extract(year from to_timestamp(hourly.tsendtime) at time zone 'UTC') = extract(year from to_timestamp(daily.tsendtime) at time zone 'UTC') \n
-  and extract(month from to_timestamp(hourly.tsendtime) at time zone 'UTC') = extract(month from to_timestamp(daily.tsendtime) at time zone 'UTC') \n
-) \n
-left outer join dh_variabledefinition as hourly_variable \n
-on( \n
-hourly.varid = hourly_variable.hydroid \n
-) \n
-left outer join dh_variabledefinition as daily_variable \n
-on( \n
-daily.varid = daily_variable.hydroid \n
-) \n
-
-where dupe.tid is null \n
-AND hourly_variable.varkey= :'hourlyvarkey' \n
-AND daily_variable.varkey= :'dailyvarkey' \n
-AND fraction.hydroid is not null \n
-and ( (hourly.tsendtime >=:start_epoch) or (:start_epoch = -1) ) \n
-and ( (hourly.tsendtime <:end_epoch) or (:end_epoch = -1) ) \n
-and ( (daily.tsendtime >=:start_epoch) or (:start_epoch = -1) ) \n
-and ( (daily.tsendtime <:end_epoch) or (:end_epoch = -1) ) \n
-;"
+with frac_daily as ( \n
+ select hourly.tstime,hourly.tsendtime, hourly.featureid, hourly.entity_type, \n
+ st_mapalgebra( hourly.rast, 1, St_Reclass(daily.rast, 1, '[0-0]:1-1, [0.0000001-99999]:0.0000001-99999', '64BF',9999), 1, '[rast1]/ [rast2]' ) as rast, \n 
+ hourly.bbox, fraction.hydroid as varid \n
+ from dh_timeseries_weather as hourly \n
+ left outer join dh_variabledefinition as fraction \n
+ on( \n
+ fraction.varkey = :'fractionvarkey' \n
+ ) \n
+Left outer join dh_timeseries_weather as daily \n
+ on( \n
+ extract(day from to_timestamp(hourly.tsendtime) at time zone 'UTC') = extract(day from to_timestamp(daily.tsendtime) at time zone 'UTC') \n
+ and extract(year from to_timestamp(hourly.tsendtime) at time zone 'UTC') = extract(year from to_timestamp(daily.tsendtime) at time zone 'UTC') \n
+ and extract(month from to_timestamp(hourly.tsendtime) at time zone 'UTC') = extract(month from to_timestamp(daily.tsendtime) at time zone 'UTC') \n
+ ) \n
+ left outer join dh_variabledefinition as hourly_variable \n
+ on( \n
+ hourly.varid = hourly_variable.hydroid \n
+ ) \n
+ left outer join dh_variabledefinition as daily_variable \n
+ on( \n
+ daily.varid = daily_variable.hydroid \n
+ ) \n
+ where hourly_variable.varkey= :'hourlyvarkey' \n
+ AND daily_variable.varkey= :'dailyvarkey' \n
+ AND fraction.hydroid is not null \n
+ and ( (hourly.tsendtime >=:start_epoch) or (:start_epoch = -1) ) \n
+ and ( (hourly.tsendtime <:end_epoch) or (:end_epoch = -1) ) \n
+ and ( (daily.tsendtime >=:start_epoch) or (:start_epoch = -1) ) \n
+ and ( (daily.tsendtime <:end_epoch) or (:end_epoch = -1) ))\n
+ select frac.* from frac_daily as frac \n
+ left outer join dh_timeseries_weather as dupe \n
+  on ( \n
+  frac.tstime = dupe.tstime \n
+  and frac.tsendtime = dupe.tsendtime \n
+  and frac.bbox = dupe.bbox \n
+  and frac.varid = dupe.varid) \n
+  where dupe.tid is null;" \n
 
 # turn off the expansion of the asterisk
 set -f
