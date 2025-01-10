@@ -69,7 +69,7 @@ Left outer join dh_timeseries_weather as daily \n
   and frac.tsendtime = dupe.tsendtime \n
   and frac.bbox = dupe.bbox \n
   and frac.varid = dupe.varid) \n
-  where dupe.tid is null;" \n
+  where dupe.tid is null;"
 
 # turn off the expansion of the asterisk
 set -f
