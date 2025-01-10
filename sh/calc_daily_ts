@@ -35,7 +35,7 @@ raster_sql="
 insert into dh_timeseries_weather (tstime,tsendtime, featureid, entity_type, rast, bbox, varid) \n
 with daily_data as ( \n
 select min(data.tstime) as tstime ,max(data.tsendtime) as tsendtime, \n
-data.featureid, data.entity_type, ST_Union(data.rast, 'SUM') as rast, daily.hydroid as varid, data.bbox \n
+data.featureid, data.entity_type, ST_Union(data.rast, 'SUM') as rast, data.bbox, daily.hydroid as varid \n
 from dh_timeseries_weather as data \n
 left outer join dh_variabledefinition as daily \n
 on(daily.varkey = :'dailyvarkey') \n
@@ -47,7 +47,7 @@ GROUP BY data.featureid, data.entity_type, data.bbox, daily.hydroid, \n
 extract(day from to_timestamp(data.tsendtime) at time zone 'UTC'), \n
 extract(year from to_timestamp(data.tsendtime) at time zone 'UTC'), \n
 extract(month from to_timestamp(data.tsendtime) at time zone 'UTC')) \n
-select * from daily_data as data \n
+select data.* from daily_data as data \n
 left outer join dh_timeseries_weather as dupe \n
 on ( data.tstime = dupe.tstime and data.tsendtime = dupe.tsendtime \n
 and data.bbox = dupe.bbox and dupe.varid = data.varid) \n
