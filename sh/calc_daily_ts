@@ -32,25 +32,26 @@ raster_sql="
 
 
 
-insert into dh_timeseries_weather (tstime,tsendtime, featureid, entity_type, rast, bbox, varid)
-select min(data.tstime),max(data.tsendtime), data.featureid, data.entity_type, ST_Union(data.rast, 'SUM') as rast, data.bbox, daily.hydroid as varid
-    from dh_timeseries_weather as data 
-    left outer join dh_variabledefinition 
-    as daily on(daily.varkey = :'dailyvarkey')
-	left outer join dh_timeseries_weather as dupe 
-	on ( data.tstime = dupe.tstime and 
-	data.tsendtime = dupe.tsendtime and data.bbox = dupe.bbox and daily.hydroid = dupe.varid )
-    left outer join dh_variabledefinition 
-    as hour on( data.varid = hour.hydroid ) 
-    where daily.hydroid is not null
-    AND dupe.tid is null
-    AND hour.varkey = :'hourlyvarkey' and 
-    ( (data.tsendtime >=:start_epoch) or (:start_epoch = -1) ) 
-    and ( (data.tsendtime <:end_epoch) or (:end_epoch = -1) ) 
-    GROUP BY data.featureid, data.entity_type, data.bbox, daily.hydroid,
-    extract(day from to_timestamp(data.tsendtime) at time zone 'UTC'), 
-    extract(year from to_timestamp(data.tsendtime) at time zone 'UTC'), 
-    extract(month from to_timestamp(data.tsendtime) at time zone 'UTC');"
+insert into dh_timeseries_weather (tstime,tsendtime, featureid, entity_type, rast, bbox, varid) \n
+with daily_data as ( \n
+select min(data.tstime) as tstime ,max(data.tsendtime) as tsendtime, \n
+data.featureid, data.entity_type, ST_Union(data.rast, 'SUM') as rast, daily.hydroid as varid, data.bbox \n
+from dh_timeseries_weather as data \n
+left outer join dh_variabledefinition as daily \n
+on(daily.varkey = :'dailyvarkey') \n
+left outer join dh_variabledefinition as hour on( data.varid = hour.hydroid ) \n
+where daily.hydroid is not null AND hour.varkey = :'hourlyvarkey' and \n
+( (data.tsendtime >=:start_epoch) or (:start_epoch = -1) ) \n
+and ( (data.tsendtime <:end_epoch) or (:end_epoch = -1) ) \n
+GROUP BY data.featureid, data.entity_type, data.bbox, daily.hydroid, \n
+extract(day from to_timestamp(data.tsendtime) at time zone 'UTC'), \n
+extract(year from to_timestamp(data.tsendtime) at time zone 'UTC'), \n
+extract(month from to_timestamp(data.tsendtime) at time zone 'UTC')) \n
+select * from daily_data as data \n
+left outer join dh_timeseries_weather as dupe \n
+on ( data.tstime = dupe.tstime and data.tsendtime = dupe.tsendtime \n
+and data.bbox = dupe.bbox and dupe.varid = data.varid) \n
+where dupe.tid is null;"
 
 # turn off the expansion of the asterisk
 set -f
