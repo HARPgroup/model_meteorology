@@ -51,9 +51,9 @@ on ( \n
 )
 Left outer join dh_timeseries_weather as daily  \n
 on( \n
-extract(day from to_timestamp(hourly.tsendtime)) = extract(day from to_timestamp(daily.tsendtime)) \n
-  and extract(year from to_timestamp(hourly.tsendtime)) = extract(year from to_timestamp(daily.tsendtime)) \n
-  and extract(month from to_timestamp(hourly.tsendtime)) = extract(month from to_timestamp(daily.tsendtime)) \n
+extract(day from to_timestamp(hourly.tsendtime) at time zone 'UTC') = extract(day from to_timestamp(daily.tsendtime) at time zone 'UTC') \n
+  and extract(year from to_timestamp(hourly.tsendtime) at time zone 'UTC') = extract(year from to_timestamp(daily.tsendtime) at time zone 'UTC') \n
+  and extract(month from to_timestamp(hourly.tsendtime) at time zone 'UTC') = extract(month from to_timestamp(daily.tsendtime) at time zone 'UTC') \n
 ) \n
 left outer join dh_variabledefinition as hourly_variable \n
 on( \n
@@ -77,4 +77,4 @@ and ( (daily.tsendtime <:end_epoch) or (:end_epoch = -1) ) \n
 # turn off the expansion of the asterisk
 set -f
 echo -e $rastersql > $raster_sql_file 
-#cat $raster_sql_file | psql -h $db_host $db_name
+cat $raster_sql_file | psql -h $db_host $db_name
