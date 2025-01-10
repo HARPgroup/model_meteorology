@@ -37,7 +37,7 @@ using dh_variabledefinition as variables
 where data.varid = variables.hydroid
   and variables.varkey = :'dailyvarkey'
   and ( (data.tsendtime >= :start_epoch) or (:start_epoch = -1) )
-  and ( (data.tsendtime <= :end_epoch) or (:end_epoch = -1) )
+  and ( (data.tsendtime <:end_epoch) or (:end_epoch = -1) )
 ;"
 
 # turn off the expansion of the asterisk
