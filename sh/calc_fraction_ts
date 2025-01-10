@@ -38,11 +38,15 @@ select hourly.tstime,hourly.tsendtime, hourly.featureid, hourly.entity_type, st_
     '[rast1]/ [rast2]'
   ) as rast,  hourly.bbox, fraction.hydroid as varid
 from dh_timeseries_weather as hourly
+left outer join dh_variabledefinition as fraction 
+on(
+   fraction.varkey = :'fractionvarkey'
+)
 left outer join tmp_dh_timeseries_weather as dupe
 on (
  hourly.tstime = dupe.tstime
  and hourly.tsendtime = dupe.tsendtime
- and hourly.varid = dupe.varid
+ and fraction.hydroid = dupe.varid
  and hourly.bbox = dupe.bbox
 )
 Left outer join dh_timeseries_weather as daily 
