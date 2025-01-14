@@ -8,7 +8,7 @@ echo "called daily_delete_ts $dailyvarkey $raster_sql_file $db_host $db_name $en
 
 deletedaily="
 \\set dailyvarkey '$dailyvarkey' \n
-\\set end_datetime $end_datetime \n
+\\set end_datetime '$end_datetime' \n
 
 delete from dh_timeseries_weather as data \n
 using dh_variabledefinition as variables \n
@@ -21,4 +21,4 @@ where data.varid = variables.hydroid \n
 # turn off the expansion of the asterisk
 set -f
 echo -e $deletedaily > $raster_sql_file
-cat $raster_sql_file | psql -h $db_host $db_name
+#cat $raster_sql_file | psql -h $db_host $db_name
