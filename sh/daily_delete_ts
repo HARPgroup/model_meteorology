@@ -2,28 +2,7 @@ dailyvarkey=$1
 raster_sql_file=$2
 db_host=$3
 db_name=$4
-start_date=-1
-end_date=-1
-
-if [ $# -gt 4 ]; then
-  start_date=$5
-fi
-
-if [ $# -gt 5 ]; then
-  end_date=$6
-fi
-
-if [ $start_date == '-1' ]; then
-  start_epoch=-1
-else
-  start_epoch=$(date -d $start_date +%s)
-fi
-
-if [ $end_date == '-1' ]; then
-  end_epoch=-1
-else
-  end_epoch=$(date -d $end_date +%s)
-fi
+end_datetime="$7 $8 $9"
 
 echo "called daily_delete_ts $dailyvarkey $raster_sql_file $db_host $db_name $start_date $end_date"
 
@@ -32,12 +11,12 @@ deletedaily="
 \\set start_epoch $start_epoch \n
 \\set end_epoch $end_epoch \n
 
-delete from dh_timeseries_weather as data
-using dh_variabledefinition as variables
-where data.varid = variables.hydroid
-  and variables.varkey = :'dailyvarkey'
-  and ( (data.tsendtime >=:start_epoch) or (:start_epoch = -1) )
-  and ( (data.tsendtime <:end_epoch) or (:end_epoch = -1) )
+delete from dh_timeseries_weather as data \n
+using dh_variabledefinition as variables \n
+where data.varid = variables.hydroid \n
+  and variables.varkey = :'dailyvarkey' \n
+  and ( data.tsendtime >  extract(epoch from :'end_datetime'::timestamptz - interval '1 day')) \n
+  and ( data.tsendtime <= extract(epoch from :'end_datetime'::timestamptz)) \n
 ;"
 
 # turn off the expansion of the asterisk
