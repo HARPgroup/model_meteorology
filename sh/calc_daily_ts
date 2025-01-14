@@ -3,7 +3,7 @@ dailyvarkey=$2
 raster_sql_file=$3
 db_host=$4
 db_name=$5
-end_datetime="$6 $7"
+end_datetime="$6 $7 $8"
 
 echo "called calc_daily_ts $hourlyvarkey $dailyvarkey $raster_sql_file $db_host $db_name $end_datetime"
 
