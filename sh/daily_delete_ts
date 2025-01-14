@@ -8,8 +8,7 @@ echo "called daily_delete_ts $dailyvarkey $raster_sql_file $db_host $db_name $en
 
 deletedaily="
 \\set dailyvarkey '$dailyvarkey' \n
-\\set start_epoch $start_epoch \n
-\\set end_epoch $end_epoch \n
+\\set end_datetime $end_datetime \n
 
 delete from dh_timeseries_weather as data \n
 using dh_variabledefinition as variables \n
