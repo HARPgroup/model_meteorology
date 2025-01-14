@@ -10,7 +10,7 @@ echo "called calc_daily_ts $hourlyvarkey $dailyvarkey $raster_sql_file $db_host 
 raster_sql="
 \\set hourlyvarkey '$hourlyvarkey' \n
 \\set dailyvarkey '$dailyvarkey' \n
-\\set start_epoch '$end_datetime' \n
+\\set end_datetime '$end_datetime' \n
 
 with daily_data as ( \n
 	select min(data.tstime) as tstime , \n
