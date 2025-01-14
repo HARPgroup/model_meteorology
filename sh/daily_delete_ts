@@ -2,9 +2,9 @@ dailyvarkey=$1
 raster_sql_file=$2
 db_host=$3
 db_name=$4
-end_datetime="$7 $8 $9"
+end_datetime="$5 $6 $7"
 
-echo "called daily_delete_ts $dailyvarkey $raster_sql_file $db_host $db_name $start_date $end_date"
+echo "called daily_delete_ts $dailyvarkey $raster_sql_file $db_host $db_name $end_datetime"
 
 deletedaily="
 \\set dailyvarkey '$dailyvarkey' \n
