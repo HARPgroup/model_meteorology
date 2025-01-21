@@ -17,7 +17,7 @@ fi
 if [ $# -gt 11 ]; then
   end_epoch=$12
 fi
-echo "called calc_raster_ts $hydrocode $varkey $DISAGGREGATE_VARKEY $DAILY_VARKEY $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $start_epoch $end_epoch"
+echo "called DISAGGREGATE_RASTER_TS $hydrocode $varkey $disaggregate_varkey $daily_varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $start_epoch $end_epoch"
 
 raster_sql="
 \\set band '1' \n
