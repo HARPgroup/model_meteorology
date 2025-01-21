@@ -1,0 +1,137 @@
+#!/bin/bash
+hydrocode=$1
+varkey=$2
+disaggregate_varkey=$3
+daily_varkey=$4
+raster_sql_file=$5
+raster_sum_file=$6
+db_host=$7
+db_name=$8
+bundle=$9
+ftype=$10
+start_epoch=-1
+end_epoch=-1
+if [ $# -gt 10 ]; then
+  start_epoch=$11
+fi
+if [ $# -gt 11 ]; then
+  end_epoch=$12
+fi
+echo "called calc_raster_ts $hydrocode $varkey $DISAGGREGATE_VARKEY $DAILY_VARKEY $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $start_epoch $end_epoch"
+
+raster_sql="
+\\set band '1' \n
+\\set hydrocode '$hydrocode' \n
+\\set varkey '$varkey' \n
+\\set disag_varkey '$disaggregate_varkey'
+\\set daily_varkey '$daily_varkey'
+\\set bundle '${bundle}' \n
+\\set ftype '${ftype}' \n
+\\set start_epoch $start_epoch \n 
+\\set end_epoch $end_epoch \n
+\\set fname '${raster_sum_file}' \n
+select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\gset \n
+
+\\\timing ON \n
+
+copy (  \n
+	WITH usgs_features AS ( \n
+		SELECT *  \n
+		FROM  dh_feature \n
+		WHERE hydrocode = :'hydrocode' \n
+		AND bundle = :'bundle' \n
+		AND ftype = :'ftype' \n
+	), \n
+	metUnion AS ( \n
+		SELECT met.featureid, \n
+			met.tstime, met.tsendtime, \n
+			st_union(met.rast) as rast \n
+		FROM usgs_features as f \n
+		LEFT JOIN field_data_dh_geofield as fgeo \n
+		ON ( \n
+			fgeo.entity_id = f.hydroid \n
+			AND fgeo.entity_type = 'dh_feature'  \n
+		)  \n
+		JOIN( \n
+			SELECT * \n
+			FROM dh_timeseries_weather as met \n
+			LEFT JOIN dh_variabledefinition as b \n
+				ON (met.varid = b.hydroid)  \n
+			WHERE b.varkey=:'varkey' \n
+				AND ( (met.tstime >= :start_epoch) OR (:start_epoch = -1) ) \n
+				AND ( (met.tsendtime <= :end_epoch) OR (:end_epoch = -1) ) \n
+				AND met.featureid = :covid \n
+		) AS met \n
+		ON fgeo.dh_geofield_geom && met.bbox \n
+		GROUP BY met.featureid, met.tsendtime, met.tstime \n
+	), \n
+	hourlyWithDefault as ( \n
+		SELECT frac.tstime,frac.tsendtime, \n
+		st_MapAlgebra( \n
+			frac.rast, 1, \n
+			St_Reclass(daily.rast, 1, '[0-0]:1-1, [0.0000001-99999]:0-0', '64BF',9999), 1, \n
+			'[rast1] + ([rast2] / 24)' \n
+		) as rast \n
+		FROM dh_timeseries_weather as frac \n
+		LEFT JOIN dh_timeseries_weather as daily \n
+		ON ( \n
+			frac.tstime >= daily.tstime  \n
+			AND frac.tsendtime <= daily.tsendtime \n
+		) \n
+		LEFT JOIN dh_variabledefinition as vf \n
+		ON (frac.varid = vf.hydroid)  \n
+		LEFT JOIN dh_variabledefinition as vd \n
+		ON (daily.varid = vd.hydroid)  \n
+		WHERE vf.varkey = :'disag_varkey' \n
+		AND vd.varkey = :'daily_varkey' \n
+		AND ( (frac.tstime >= :start_epoch) OR (:start_epoch = -1) ) \n
+		AND ( (frac.tsendtime <= :end_epoch) OR (:end_epoch = -1) ) \n
+	), \n
+	tempDisagg as ( \n
+		SELECT met.featureid,  \n
+		frac.tstime, frac.tsendtime, \n
+		ST_MapAlgebra( \n
+			met.rast, 1, \n
+			ST_Resample(frac.rast,met.rast), 1, \n
+			'[rast1] * [rast2]' \n
+		) as rast \n
+		FROM hourlyWithDefault as frac  \n
+		LEFT JOIN metUnion as met \n
+		ON ( \n
+			frac.tstime >= met.tstime  \n
+			AND frac.tsendtime <= met.tsendtime \n
+		) \n
+	), \n
+	met as ( \n
+		Select f.hydrocode, \n
+			met.featureid, to_timestamp(met.tsendtime) as obs_date, \n
+			extract(year from to_timestamp(met.tsendtime)) as yr, \n
+			extract(month from to_timestamp(met.tsendtime)) as mo, \n
+			extract(day from to_timestamp(met.tsendtime)) as da, \n
+			extract(hour from to_timestamp(met.tsendtime)) as hr, \n
+			met.tstime,met.tsendtime, \n
+			(ST_summarystats(st_clip(met.rast, fgeo.dh_geofield_geom), :'band', TRUE)).mean as stats \n
+		FROM usgs_features as f \n
+		LEFT JOIN field_data_dh_geofield as fgeo \n
+		ON ( \n
+			fgeo.entity_id = f.hydroid \n
+			AND fgeo.entity_type = 'dh_feature'  \n
+		)  \n
+		JOIN tempDisagg AS met \n
+		ON ST_Intersects(ST_ConvexHull(met.rast),fgeo.dh_geofield_geom) \n
+	) \n
+	SELECT * FROM ( \n
+		SELECT hydrocode, \n
+		featureid, obs_date,  \n
+		tstime,tsendtime, \n
+		yr, mo, da, hr,  \n
+		0.0393701 * stats precip_in \n
+		FROM met \n
+	) as metResults \n
+	ORDER BY metResults.tsendtime \n
+) to :'fname' WITH HEADER CSV;"
+# turn off the expansion of the asterisk
+set -f
+echo -e $raster_sql > $raster_sql_file 
+cat $raster_sql_file | psql -h $db_host $db_name
+
