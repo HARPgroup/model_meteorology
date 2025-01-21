@@ -22,7 +22,8 @@ with frac_daily as ( \n
  left outer join dh_variabledefinition as fraction \n
  on (fraction.varkey = :'fractionvarkey') \n
  Left outer join dh_timeseries_weather as daily \n
- on(hourly.tsendtime between daily.tstime and daily.tsendtime) \n
+ on(hourly.tsendtime > daily.tstime \n
+	and hourly.tsendtime <= daily.tsendtime) \n
  left outer join dh_variabledefinition as hourly_variable \n
  on (hourly.varid = hourly_variable.hydroid) \n
  left outer join dh_variabledefinition as daily_variable \n
