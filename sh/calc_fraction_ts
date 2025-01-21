@@ -33,6 +33,8 @@ with frac_daily as ( \n
 	AND fraction.hydroid is not null \n
 	and ( hourly.tsendtime >  extract(epoch from :'end_datetime'::timestamptz - interval '1 day')) \n
 	and ( hourly.tsendtime <= extract(epoch from :'end_datetime'::timestamptz)) \n
+	 and ( daily.tsendtime > extract(epoch from :'end_datetime'::timestamptz - interval '1 day')) \n
+ and ( daily.tsendtime <= extract(epoch from :'end_datetime'::timestamptz)) \n 
  )\n
  insert into dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid) \n
  select frac.* from frac_daily as frac \n
