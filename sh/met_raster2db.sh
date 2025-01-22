@@ -63,36 +63,24 @@ fi
 
 echo "Updating dh_timeseries_weather..."
 #Now update dh_timeseries_weather
-echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, entity_type, rast, bbox)
+# Notes:
+#	--We join in dh_timeseries_weather in case this data has already been created. This join will add no data if 
+#	--there is no matching data in dh_timeseries_weather
+#	--By specifying tid = NULL we ensure this query returns no rows if there is a match within dh_timeseries_weather
+insert_sql="insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, entity_type, bbox, rast)
 	select '$tstime','$tsendtime', v.hydroid as varid, f.hydroid as featureid, '${entity_type}', met.rast,
           st_envelope(met.rast)
 	from dh_feature as f 
 	left outer join dh_variabledefinition as v
 		on (v.varkey = '${varkey}')
-	--We join in dh_timeseries_weather in case this data has already been created. This join will add no data if 
-	--there is no matching data in dh_timeseries_weather
 	left outer join dh_timeseries_weather as w
 		on (f.hydroid = w.featureid and w.tstime = '${tstime}' and w.varid = v.hydroid) 
 	left outer join ${tmp_tbl_name} as met
 		on (1 = 1)
-	--By specifying tid = NULL we ensure this query returns no rows if there is a match within dh_timeseries_weather
 	WHERE w.tid is null
 		AND f.hydrocode = '${extent_hydrocode}';"
-echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, entity_type, bbox)
-	select '$tstime','$tsendtime', v.hydroid as varid, f.hydroid as featureid, '${entity_type}', met.rast,
-          st_envelope(met.rast)
-	from dh_feature as f 
-	left outer join dh_variabledefinition as v
-		on (v.varkey = '${varkey}')
-	--We join in dh_timeseries_weather in case this data has already been created. This join will add no data if 
-	--there is no matching data in dh_timeseries_weather
-	left outer join dh_timeseries_weather as w
-		on (f.hydroid = w.featureid and w.tstime = '${tstime}' and w.varid = v.hydroid) 
-	left outer join ${tmp_tbl_name} as met
-		on (1 = 1)
-	--By specifying tid = NULL we ensure this query returns no rows if there is a match within dh_timeseries_weather
-	WHERE w.tid is null
-		AND f.hydrocode = '${extent_hydrocode}';" | psql -h $db_host -d $db_name
+echo "SQL: $insert_sql"
+echo $insert_sql | psql -h $db_host -d $db_name
 echo "Removing unecessary files..."
 echo "drop table ${tmp_tbl_name};" | psql -h $db_host -d $db_name
 rm $tmp_sql_file
