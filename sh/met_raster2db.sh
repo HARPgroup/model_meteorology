@@ -67,7 +67,7 @@ echo "Updating dh_timeseries_weather..."
 #	--We join in dh_timeseries_weather in case this data has already been created. This join will add no data if 
 #	--there is no matching data in dh_timeseries_weather
 #	--By specifying tid = NULL we ensure this query returns no rows if there is a match within dh_timeseries_weather
-insert_sql="insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, entity_type, bbox, rast)
+insert_sql="insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, entity_type, rast, bbox)
 	select '$tstime','$tsendtime', v.hydroid as varid, f.hydroid as featureid, '${entity_type}', met.rast,
           st_envelope(met.rast)
 	from dh_feature as f 
