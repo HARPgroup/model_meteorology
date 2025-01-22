@@ -78,7 +78,7 @@ echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, enti
 	--By specifying tid = NULL we ensure this query returns no rows if there is a match within dh_timeseries_weather
 	WHERE w.tid is null
 		AND f.hydrocode = '${extent_hydrocode}';"
-echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, entity_type, rast.bbox)
+echo "insert into dh_timeseries_weather(tstime,tsendtime, varid, featureid, entity_type, bbox)
 	select '$tstime','$tsendtime', v.hydroid as varid, f.hydroid as featureid, '${entity_type}', met.rast,
           st_envelope(met.rast)
 	from dh_feature as f 
