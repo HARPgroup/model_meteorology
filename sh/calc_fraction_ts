@@ -31,9 +31,9 @@ with frac_daily as ( \n
  where hourly_variable.varkey= :'hourlyvarkey' \n
 	AND daily_variable.varkey= :'dailyvarkey' \n
 	AND fraction.hydroid is not null \n
-	and ( hourly.tsendtime >  extract(epoch from :'end_datetime'::timestamptz - interval '1 day')) \n
+	and ( hourly.tsendtime >  extract(epoch from :'end_datetime'::timestamptz) - 86400) \n
 	and ( hourly.tsendtime <= extract(epoch from :'end_datetime'::timestamptz)) \n
-	 and ( daily.tsendtime > extract(epoch from :'end_datetime'::timestamptz - interval '1 day')) \n
+	 and ( daily.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400) \n
  and ( daily.tsendtime <= extract(epoch from :'end_datetime'::timestamptz)) \n 
  )\n
  insert into dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid) \n

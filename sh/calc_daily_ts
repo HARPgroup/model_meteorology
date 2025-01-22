@@ -23,8 +23,8 @@ with daily_data as ( \n
 	on(daily.varkey = :'dailyvarkey')  \n
 	left outer join dh_variabledefinition as hour on( data.varid = hour.hydroid )  \n
 	where daily.hydroid is not null AND hour.varkey = :'hourlyvarkey' and  \n
-		( (to_timestamp(data.tsendtime) > :'end_datetime'::timestamptz - interval '1 day') )  \n
-		and (to_timestamp(data.tsendtime) <= :'end_datetime'::timestamptz) \n
+		( data.tsendtime > (extract(epoch from :'end_datetime'::timestamptz) - 86400) )  \n
+		and ( data.tsendtime <= extract(epoch from :'end_datetime'::timestamptz)) \n
 	GROUP BY data.featureid,data.entity_type,daily.hydroid,data.bbox \n
 ) \n
 insert into dh_timeseries_weather (tstime,tsendtime, featureid, entity_type, rast, bbox, varid) \n

@@ -14,7 +14,7 @@ delete from dh_timeseries_weather as data \n
 using dh_variabledefinition as variables \n
 where data.varid = variables.hydroid \n
   and variables.varkey = :'dailyvarkey' \n
-  and ( data.tsendtime >  extract(epoch from :'end_datetime'::timestamptz - interval '1 day')) \n
+  and ( data.tsendtime >  extract(epoch from :'end_datetime'::timestamptz) - 86400) \n
   and ( data.tsendtime <= extract(epoch from :'end_datetime'::timestamptz)) \n
 ;"
 
