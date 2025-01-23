@@ -24,7 +24,7 @@ with daily_union as ( \n
  WHERE daily_variable.varkey= :'dailyvarkey'  \n
 	AND ( daily.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400)  \n
     AND ( daily.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))   \n
- GROUP BY daily_variable.hydroid, extract(day from to_timestamp(data.tstime - 43200) at time zone 'UTC') \n
+ GROUP BY daily_variable.hydroid, extract(day from to_timestamp(daily.tstime - 43200) at time zone 'UTC') \n
 ), \n
 frac_daily as (  \n
  SELECT hourly.tstime,hourly.tsendtime, \n
