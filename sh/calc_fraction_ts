@@ -28,7 +28,6 @@ with daily_union as ( \n
 ), \n
 frac_daily as (  \n
  SELECT hourly.tstime,hourly.tsendtime, \n
- daily.tstime, daily.tsendtime, \n
  hourly.featureid, hourly.entity_type, \n
  st_mapalgebra( hourly.rast, 1, St_Reclass(daily.rast, 1, '[0-0]:1-1, [0.0000001-99999]:0.0000001-99999', '64BF',9999), 1, '[rast1]/ [rast2]' ) as rast,  \n
  hourly.bbox,  \n
