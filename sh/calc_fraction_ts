@@ -34,7 +34,7 @@ frac_daily as (
 				'[rast1]/ [rast2]'
 			), 1,
 			St_Reclass( daily.rast, 1, '[0-0]:1-1, [0.0000001-99999]:0-0', '64BF',9999 ), 1,
-			'[rast1]+ [rast2] / 24'
+			'[rast1]+ ([rast2] / 24)'
 		) as rast,
 		hourly.bbox,
 		fraction.hydroid as varid
