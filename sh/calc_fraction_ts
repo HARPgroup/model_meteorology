@@ -25,21 +25,25 @@ with dailyUnion as (
 		AND ( daily.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))
 	GROUP BY daily_variable.hydroid, extract(day from to_timestamp(daily.tstime - 43200) at time zone 'UTC')
 ),
-dailyDefault as (
+dailyReclass as (
 	SELECT dailyUnion.tstime, dailyUnion.tsendtime,
-	St_Reclass( dailyUnion.rast, 1, '[0-0]:24-24, [0.0000001-99999]:0.0000001-99999', '64BF',9999 ) as rast,
+	St_Reclass( dailyUnion.rast, 1, '[0-0]:1-1, [0.0000001-99999]:0.0000001-99999', '64BF',9999 ) as rast,
 	dailyUnion.varid
 	FROM dailyUnion
 ), frac_daily as (
 	SELECT hourly.tstime,hourly.tsendtime,
 		hourly.featureid, hourly.entity_type,
-		st_mapalgebra( hourly.rast, 1, daily.rast, 1, '[rast1]/ [rast2]' ) as rast,
+		st_mapalgebra(
+			st_mapalgebra( hourly.rast, 1, daily.rast, 1, '[rast1]/ [rast2]' ), 1,
+			St_Reclass( dailyUnion.rast, 1, '[0-0]:1-1, [0.0000001-99999]:0-0', '64BF',9999 ), 1,
+			'[rast1]+ [rast2] / 24'
+		) as rast,
 		hourly.bbox,
 		fraction.hydroid as varid
 	FROM dh_timeseries_weather as hourly
 	LEFT JOIN dh_variabledefinition as fraction
 	ON (fraction.varkey = :'fractionvarkey')
-	LEFT JOIN dailyDefault as daily
+	LEFT JOIN dailyReclass as daily
 	ON (hourly.tsendtime > daily.tstime
 	and hourly.tsendtime <= daily.tsendtime)
 	LEFT JOIN dh_variabledefinition as hourly_variable
