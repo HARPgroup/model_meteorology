@@ -45,7 +45,7 @@ frac_daily as (  \n
  FROM dh_timeseries_weather as hourly  \n
  LEFT JOIN dh_variabledefinition as fraction  \n
  ON (fraction.varkey = :'fractionvarkey')  \n
- LEFT JOIN daily_union as daily  \n
+ LEFT JOIN dailyUnion as daily  \n
  ON (hourly.tsendtime > daily.tstime  \n
   and hourly.tsendtime <= daily.tsendtime)  \n
  LEFT JOIN dh_variabledefinition as hourly_variable  \n
