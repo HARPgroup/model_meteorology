@@ -12,45 +12,42 @@ rastersql="
 \\set dailyvarkey '$dailyvarkey' \n
 \\set fractionvarkey '$fractionvarkey' \n
 \\set end_datetime '$end_datetime' \n
-
-with dailyUnion as ( \n
-	SELECT min(daily.tstime) as tstime, \n
-		max(daily.tsendtime) as tsendtime,  \n
-		ST_UNION(daily.rast,'sum') as rast,  \n
-		daily_variable.hydroid as varid \n
-	FROM dh_timeseries_weather as daily  \n
-	LEFT JOIN dh_variabledefinition as daily_variable  \n
-	on (daily.varid = daily_variable.hydroid)  \n
-	WHERE daily_variable.varkey= :'dailyvarkey'  \n
-		AND ( daily.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400)  \n
-		AND ( daily.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))   \n
-	GROUP BY daily_variable.hydroid, extract(day from to_timestamp(daily.tstime - 43200) at time zone 'UTC') \n
-), \n
-dailyDefault as ( \n
-	SELECT dailyUnion.tstime, \n
-	dailyUnion.tsendtime, \n
-	St_Reclass( dailyUnion.rast, 1, '[0-0]:24-24, [0.0000001-99999]:0.0000001-99999', '64BF',9999 ) as rast, \n
-	dailyUnion.varid \n
-	FROM dailyUnion \n
-), \n
-frac_daily as (  \n
- SELECT hourly.tstime,hourly.tsendtime, \n
- hourly.featureid, hourly.entity_type, \n
- st_mapalgebra( hourly.rast, 1, daily.rast, 1, '[rast1]/ [rast2]' ) as rast,  \n
- hourly.bbox,  \n
- fraction.hydroid as varid  \n
- FROM dh_timeseries_weather as hourly  \n
- LEFT JOIN dh_variabledefinition as fraction  \n
- ON (fraction.varkey = :'fractionvarkey')  \n
- LEFT JOIN dailyUnion as daily  \n
- ON (hourly.tsendtime > daily.tstime  \n
-  and hourly.tsendtime <= daily.tsendtime)  \n
- LEFT JOIN dh_variabledefinition as hourly_variable  \n
- on (hourly.varid = hourly_variable.hydroid)  \n
- WHERE hourly_variable.varkey= :'hourlyvarkey'  \n
-	AND ( hourly.tsendtime >  extract(epoch from :'end_datetime'::timestamptz) - 86400)  \n
-	AND ( hourly.tsendtime <= extract(epoch from :'end_datetime'::timestamptz)) \n
-) \n
+with dailyUnion as (
+	SELECT min(daily.tstime) as tstime,
+		max(daily.tsendtime) as tsendtime,
+		ST_UNION(daily.rast,'sum') as rast,
+		daily_variable.hydroid as varid
+	FROM dh_timeseries_weather as daily
+	LEFT JOIN dh_variabledefinition as daily_variable
+	on (daily.varid = daily_variable.hydroid)
+	WHERE daily_variable.varkey= :'dailyvarkey'
+		AND ( daily.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400)
+		AND ( daily.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))
+	GROUP BY daily_variable.hydroid, extract(day from to_timestamp(daily.tstime - 43200) at time zone 'UTC')
+),
+dailyDefault as (
+	SELECT dailyUnion.tstime, dailyUnion.tsendtime,
+	St_Reclass( dailyUnion.rast, 1, '[0-0]:24-24, [0.0000001-99999]:0.0000001-99999', '64BF',9999 ) as rast,
+	dailyUnion.varid
+	FROM dailyUnion
+), frac_daily as (
+	SELECT hourly.tstime,hourly.tsendtime,
+		hourly.featureid, hourly.entity_type,
+		st_mapalgebra( hourly.rast, 1, daily.rast, 1, '[rast1]/ [rast2]' ) as rast,
+		hourly.bbox,
+		fraction.hydroid as varid
+	FROM dh_timeseries_weather as hourly
+	LEFT JOIN dh_variabledefinition as fraction
+	ON (fraction.varkey = :'fractionvarkey')
+	LEFT JOIN dailyDefault as daily
+	ON (hourly.tsendtime > daily.tstime
+	and hourly.tsendtime <= daily.tsendtime)
+	LEFT JOIN dh_variabledefinition as hourly_variable
+	on (hourly.varid = hourly_variable.hydroid)
+	WHERE hourly_variable.varkey= :'hourlyvarkey'
+		AND ( hourly.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400)
+		AND ( hourly.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))
+)
 INSERT INTO dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid)  \n
 SELECT frac.* FROM frac_daily as frac  \n
 LEFT JOIN dh_timeseries_weather as dupe  \n
