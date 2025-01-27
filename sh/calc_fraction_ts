@@ -29,10 +29,7 @@ with dailyUnion as ( \n
 dailyDefault as ( \n
 	SELECT dailyUnion.tstime, \n
 	dailyUnion.tsendtime, \n
-	St_Reclass( \n
-		dailyUnion.rast, 1, \n
-		'[0-0]:24-24, [0.0000001-99999]:0.0000001-99999', '64BF',9999 \n
-	) as rast, \n
+	St_Reclass( dailyUnion.rast, 1, '[0-0]:24-24, [0.0000001-99999]:0.0000001-99999', '64BF',9999 ) as rast, as rast, \n
 	dailyUnion.varid \n
 	FROM dailyUnion \n
 ), \n
