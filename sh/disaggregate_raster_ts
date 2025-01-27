@@ -36,131 +36,128 @@ select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\
 	
 copy (  \n
 	WITH usgs_features AS (
-		SELECT *
-		FROM dh_feature
-		WHERE hydrocode = :'hydrocode'
-		AND bundle = :'bundle'
-		AND ftype = :'ftype'
-	),
-	metUnion AS (
-		SELECT met.featureid,
-		met.tstime, met.tsendtime,
-		st_clip(
-			st_union(met.rast),
-			fgeo.dh_geofield_geom
-		) as rast
-		FROM usgs_features as f
-		LEFT JOIN field_data_dh_geofield as fgeo
-		ON (
-			fgeo.entity_id = f.hydroid
-			AND fgeo.entity_type = 'dh_feature'
-		)
-		JOIN(
-			SELECT *
-			FROM dh_timeseries_weather as met
-			LEFT JOIN dh_variabledefinition as b
-			ON (met.varid = b.hydroid)
-			WHERE b.varkey=:'varkey'
-			AND ( (met.tsendtime >= :start_epoch) OR (:start_epoch = -1) )
-			AND ( (met.tsendtime <= :end_epoch) OR (:end_epoch = -1) )
-			AND met.featureid = :covid
-		) AS met
-		ON fgeo.dh_geofield_geom && met.bbox
-		GROUP BY met.featureid, met.tsendtime, met.tstime, fgeo.dh_geofield_geom
-	),
-	dailyUnion as ( 
-		SELECT min(daily.tstime) as tstime,
-		max(daily.tsendtime) as tsendtime,
-		to_timestamp(min(daily.tstime)),
-		to_timestamp(max(daily.tsendtime)),
-		extract(day from to_timestamp(daily.tsendtime - 43200) at time zone 'UTC'),
-		ST_UNION(daily.rast,'sum') as rast,
-		daily_variable.hydroid as varid
-		FROM dh_timeseries_weather as daily
-		LEFT JOIN dh_variabledefinition as daily_variable
-		on (daily.varid = daily_variable.hydroid)
-		WHERE daily_variable.varkey= :'daily_varkey'
-		AND ( (daily.tsendtime >= (:start_epoch)) OR (:start_epoch = -1) )
-		AND ( (daily.tsendtime <= (:end_epoch)) OR (:end_epoch = -1) )
-		GROUP BY daily_variable.hydroid,
-		extract(day from to_timestamp(daily.tsendtime - 43200) at time zone 'UTC'),
-		extract(month from to_timestamp(daily.tsendtime - 43200) at time zone 'UTC'),
-		extract(year from to_timestamp(daily.tsendtime - 43200) at time zone 'UTC') 
-		order by min(daily.tstime)
-	),
-	dailyDefault as (
-		SELECT dailyUnion.tstime,
-		dailyUnion.tsendtime,
-		St_Reclass(
-			st_clip(
-				st_resample(dailyUnion.rast,met.rast),
-				ST_ConvexHull(met.rast)),
-			1, '[0-0]:1-1, [0.0000001-99999]:0-0', '64BF',9999
-		) as rast,
-		dailyUnion.varid
-		FROM dailyUnion
-		LEFT JOIN metUnion as met
-		ON (
-		dailyUnion.tstime >= met.tstime
-		AND dailyUnion.tsendtime <= met.tsendtime
-		)
-	),
-	hourlyWithDefault as (
-		SELECT frac.tstime,frac.tsendtime,
-		st_MapAlgebra(
-			st_clip(
-				st_resample(frac.rast,daily.rast),
-				ST_ConvexHull(daily.rast)), 1,
-			daily.rast, 1,
-			'[rast1] + ([rast2] / 24)'
-		) as rast
-		FROM dh_timeseries_weather as frac
-		LEFT JOIN dailyDefault as daily
-		ON (
-		frac.tstime >= daily.tstime
-		AND frac.tsendtime <= daily.tsendtime
-		)
-		LEFT JOIN dh_variabledefinition as vf
-		ON (frac.varid = vf.hydroid)
-		WHERE vf.varkey = :'disag_varkey'
-		AND ( (frac.tstime >= :start_epoch) OR (:start_epoch = -1) )
-		AND ( (frac.tsendtime <= :end_epoch) OR (:end_epoch = -1) )
-	),
-	tempDisagg as (
-		SELECT met.featureid,
-		frac.tstime, frac.tsendtime,
-		ST_MapAlgebra(
-			met.rast, 1,
-			frac.rast, 1,
-			'[rast1] * [rast2]'
-		) as rast
-		FROM hourlyWithDefault as frac
-		LEFT JOIN metUnion as met
-		ON (
-		frac.tstime >= met.tstime
-		AND frac.tsendtime <= met.tsendtime
-		)
-	),
-	met as (
-		Select :'hydrocode' as hydrocode,
-		met.featureid, to_timestamp(met.tsendtime) as obs_date,
-		extract(year from to_timestamp(met.tsendtime)) as yr,
-		extract(month from to_timestamp(met.tsendtime)) as mo,
-		extract(day from to_timestamp(met.tsendtime)) as da,
-		extract(hour from to_timestamp(met.tsendtime)) as hr,
-		met.tstime,met.tsendtime,
-		(ST_summarystats(met.rast, :'band', TRUE)).mean as stats
-		FROM tempDisagg as met
+	SELECT *
+	FROM dh_feature
+	WHERE hydrocode = :'hydrocode'
+	AND bundle = :'bundle'
+	AND ftype = :'ftype'
+)
+,metUnion AS (
+	SELECT met.featureid,
+	met.tstime, met.tsendtime,
+	st_clip(
+		st_union(met.rast),
+		fgeo.dh_geofield_geom
+	) as rast
+	FROM usgs_features as f
+	LEFT JOIN field_data_dh_geofield as fgeo
+	ON (
+		fgeo.entity_id = f.hydroid
+		AND fgeo.entity_type = 'dh_feature'
 	)
-	SELECT * FROM (
-		SELECT hydrocode,
-		featureid, obs_date,
-		tstime,tsendtime,
-		yr, mo, da, hr,
-		0.0393701 * stats precip_in
-		FROM met
-	) as metResults
-	ORDER BY metResults.tsendtime
+	JOIN(
+		SELECT *
+		FROM dh_timeseries_weather as met
+		LEFT JOIN dh_variabledefinition as b
+		ON (met.varid = b.hydroid)
+		WHERE b.varkey=:'varkey'
+		AND ( (met.tsendtime >= :start_epoch) OR (:start_epoch = -1) )
+		AND ( (met.tsendtime <= :end_epoch) OR (:end_epoch = -1) )
+		AND met.featureid = :covid
+	) AS met
+	ON fgeo.dh_geofield_geom && met.bbox
+	GROUP BY met.featureid, met.tsendtime, met.tstime, fgeo.dh_geofield_geom
+)
+,dailyUnion as ( 
+	SELECT min(daily.tstime) as tstime,
+	max(daily.tsendtime) as tsendtime,
+	ST_UNION(daily.rast,'sum') as rast,
+	daily_variable.hydroid as varid
+	FROM dh_timeseries_weather as daily
+	LEFT JOIN dh_variabledefinition as daily_variable
+	on (daily.varid = daily_variable.hydroid)
+	WHERE daily_variable.varkey= :'daily_varkey'
+	AND ( (daily.tsendtime >= (:start_epoch)) OR (:start_epoch = -1) )
+	AND ( (daily.tsendtime <= (:end_epoch)) OR (:end_epoch = -1) )
+	GROUP BY daily_variable.hydroid,
+	extract(day from to_timestamp(daily.tstime - 43200) at time zone 'UTC'),
+	extract(month from to_timestamp(daily.tstime - 43200) at time zone 'UTC'),
+	extract(year from to_timestamp(daily.tstime - 43200) at time zone 'UTC') 
+	order by min(daily.tstime)
+),
+dailyDefault as (
+	SELECT dailyUnion.tstime,
+	dailyUnion.tsendtime,
+	St_Reclass(
+		st_clip(
+			st_resample(dailyUnion.rast,met.rast),
+			ST_ConvexHull(met.rast)),
+		1, '[0-0]:1-1, [0.0000001-99999]:0-0', '64BF',9999
+	) as rast,
+	dailyUnion.varid
+	FROM dailyUnion
+	LEFT JOIN metUnion as met
+	ON (
+	dailyUnion.tstime >= met.tstime
+	AND dailyUnion.tsendtime <= met.tsendtime
+	)
+),
+hourlyWithDefault as (
+	SELECT frac.tstime,frac.tsendtime,
+	st_MapAlgebra(
+		st_clip(
+			st_resample(frac.rast,daily.rast),
+			ST_ConvexHull(daily.rast)), 1,
+		daily.rast, 1,
+		'[rast1] + ([rast2] / 24)'
+	) as rast
+	FROM dh_timeseries_weather as frac
+	LEFT JOIN dailyDefault as daily
+	ON (
+	frac.tstime >= daily.tstime
+	AND frac.tsendtime <= daily.tsendtime
+	)
+	LEFT JOIN dh_variabledefinition as vf
+	ON (frac.varid = vf.hydroid)
+	WHERE vf.varkey = :'disag_varkey'
+	AND ( (frac.tstime >= :start_epoch) OR (:start_epoch = -1) )
+	AND ( (frac.tsendtime <= :end_epoch) OR (:end_epoch = -1) )
+),
+tempDisagg as (
+	SELECT met.featureid,
+	frac.tstime, frac.tsendtime,
+	ST_MapAlgebra(
+		met.rast, 1,
+		frac.rast, 1,
+		'[rast1] * [rast2]'
+	) as rast
+	FROM hourlyWithDefault as frac
+	LEFT JOIN metUnion as met
+	ON (
+	frac.tstime >= met.tstime
+	AND frac.tsendtime <= met.tsendtime
+	)
+),
+met as (
+	Select :'hydrocode' as hydrocode,
+	met.featureid, to_timestamp(met.tsendtime) as obs_date,
+	extract(year from to_timestamp(met.tsendtime)) as yr,
+	extract(month from to_timestamp(met.tsendtime)) as mo,
+	extract(day from to_timestamp(met.tsendtime)) as da,
+	extract(hour from to_timestamp(met.tsendtime)) as hr,
+	met.tstime,met.tsendtime,
+	(ST_summarystats(met.rast, :'band', TRUE)).mean as stats
+	FROM tempDisagg as met
+)
+SELECT * FROM (
+	SELECT hydrocode,
+	featureid, obs_date,
+	tstime,tsendtime,
+	yr, mo, da, hr,
+	0.0393701 * stats precip_in
+	FROM met
+) as metResults
+ORDER BY metResults.tsendtime
 ) to :'fname' WITH HEADER CSV;"
 # turn off the expansion of the asterisk
 set -f

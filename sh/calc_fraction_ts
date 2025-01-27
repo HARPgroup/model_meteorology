@@ -13,7 +13,7 @@ rastersql="
 \\set fractionvarkey '$fractionvarkey' \n
 \\set end_datetime '$end_datetime' \n
 
-with daily_union as ( \n
+with dailyUnion as ( \n
 	SELECT min(daily.tstime) as tstime, \n
 		max(daily.tsendtime) as tsendtime,  \n
 		ST_UNION(daily.rast,'sum') as rast,  \n
@@ -26,16 +26,16 @@ with daily_union as ( \n
 		AND ( daily.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))   \n
 	GROUP BY daily_variable.hydroid, extract(day from to_timestamp(daily.tstime - 43200) at time zone 'UTC') \n
 ), \n
-dailyDefault as (
-	SELECT dailyUnion.tstime,
-	dailyUnion.tsendtime,
-	St_Reclass(
-		dailyUnion.rast, 1,
-		'[0-0]:24-24, [0.0000001-99999]:0-0', '64BF',9999
-	) as rast,
-	dailyUnion.varid
-	FROM dailyUnion
-),
+dailyDefault as ( \n
+	SELECT dailyUnion.tstime, \n
+	dailyUnion.tsendtime, \n
+	St_Reclass( \n
+		dailyUnion.rast, 1, \n
+		'[0-0]:24-24, [0.0000001-99999]:0.0000001-99999', '64BF',9999 \n
+	) as rast, \n
+	dailyUnion.varid \n
+	FROM dailyUnion \n
+), \n
 frac_daily as (  \n
  SELECT hourly.tstime,hourly.tsendtime, \n
  hourly.featureid, hourly.entity_type, \n
