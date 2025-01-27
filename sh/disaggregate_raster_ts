@@ -27,7 +27,6 @@ raster_sql="
 \\set daily_varkey '$daily_varkey'
 \\set bundle '${bundle}' \n
 \\set ftype '${ftype}' \n
-\\set dailyvarkey '${daily_varkey}\n
 \\set start_epoch $start_epoch \n 
 \\set end_epoch $end_epoch \n
 \\set fname '${raster_sum_file}' \n
@@ -62,7 +61,7 @@ copy (  \n
 			LEFT JOIN dh_variabledefinition as b
 			ON (met.varid = b.hydroid)
 			WHERE b.varkey=:'varkey'
-			AND ( (met.tstime >= :start_epoch) OR (:start_epoch = -1) )
+			AND ( (met.tsendtime >= :start_epoch) OR (:start_epoch = -1) )
 			AND ( (met.tsendtime <= :end_epoch) OR (:end_epoch = -1) )
 			AND met.featureid = :covid
 		) AS met
@@ -72,18 +71,22 @@ copy (  \n
 	dailyUnion as ( 
 		SELECT min(daily.tstime) as tstime,
 		max(daily.tsendtime) as tsendtime,
+		to_timestamp(min(daily.tstime)),
+		to_timestamp(max(daily.tsendtime)),
+		extract(day from to_timestamp(daily.tsendtime - 43200) at time zone 'UTC'),
 		ST_UNION(daily.rast,'sum') as rast,
 		daily_variable.hydroid as varid
 		FROM dh_timeseries_weather as daily
 		LEFT JOIN dh_variabledefinition as daily_variable
 		on (daily.varid = daily_variable.hydroid)
 		WHERE daily_variable.varkey= :'daily_varkey'
-		AND ( (daily.tsendtime >= (:start_epoch - 86400)) OR (:start_epoch = -1) )
-		AND ( (daily.tsendtime <= (:end_epoch + 86400)) OR (:end_epoch = -1) )
+		AND ( (daily.tsendtime >= (:start_epoch)) OR (:start_epoch = -1) )
+		AND ( (daily.tsendtime <= (:end_epoch)) OR (:end_epoch = -1) )
 		GROUP BY daily_variable.hydroid,
 		extract(day from to_timestamp(daily.tsendtime - 43200) at time zone 'UTC'),
 		extract(month from to_timestamp(daily.tsendtime - 43200) at time zone 'UTC'),
 		extract(year from to_timestamp(daily.tsendtime - 43200) at time zone 'UTC') 
+		order by min(daily.tstime)
 	),
 	dailyDefault as (
 		SELECT dailyUnion.tstime,
@@ -139,7 +142,7 @@ copy (  \n
 		)
 	),
 	met as (
-		Select :'hydrocode',
+		Select :'hydrocode' as hydrocode,
 		met.featureid, to_timestamp(met.tsendtime) as obs_date,
 		extract(year from to_timestamp(met.tsendtime)) as yr,
 		extract(month from to_timestamp(met.tsendtime)) as mo,
@@ -147,7 +150,7 @@ copy (  \n
 		extract(hour from to_timestamp(met.tsendtime)) as hr,
 		met.tstime,met.tsendtime,
 		(ST_summarystats(met.rast, :'band', TRUE)).mean as stats
-		FROM tempDisagg
+		FROM tempDisagg as met
 	)
 	SELECT * FROM (
 		SELECT hydrocode,
