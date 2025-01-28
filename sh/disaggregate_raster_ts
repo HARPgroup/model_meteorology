@@ -23,8 +23,8 @@ raster_sql="
 \\set band '1' \n
 \\set hydrocode '$hydrocode' \n
 \\set varkey '$varkey' \n
-\\set disag_varkey '$disaggregate_varkey'
-\\set daily_varkey '$daily_varkey'
+\\set disag_varkey '$disaggregate_varkey' \n
+\\set daily_varkey '$daily_varkey' \n
 \\set bundle '${bundle}' \n
 \\set ftype '${ftype}' \n
 \\set start_epoch $start_epoch \n 
@@ -67,8 +67,8 @@ WITH usgs_features AS (  \n
 	) AS met  \n
 	ON fgeo.dh_geofield_geom && met.bbox  \n
 	GROUP BY met.featureid, met.tsendtime, met.tstime, fgeo.dh_geofield_geom  \n
-),  \n
-tempDisagg as (  \n
+)
+,tempDisagg as (  \n
 	SELECT met.featureid,  \n
 	frac.tstime, frac.tsendtime,  \n
 	ST_MapAlgebra(  \n
@@ -90,8 +90,8 @@ tempDisagg as (  \n
 	WHERE vf.varkey = :'disag_varkey'  \n
 	AND ( (frac.tstime >= :start_epoch) OR (:start_epoch = -1) )  \n
 	AND ( (frac.tsendtime <= :end_epoch) OR (:end_epoch = -1) )  \n
-),  \n
-met as (  \n
+)
+,met as (  \n
 	Select :'hydrocode' as hydrocode,  \n
 	met.featureid, to_timestamp(met.tsendtime) as obs_date,  \n
 	extract(year from to_timestamp(met.tsendtime)) as yr,  \n
