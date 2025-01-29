@@ -36,7 +36,8 @@ select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\
 	
 copy (  \n
 WITH usgs_features AS (  \n
-	SELECT *  \n
+	SELECT *,  \n
+		st_buffer(st_convexhull(fgeo.dh_geofield_geom),0.125) as f_big_bbox  \n
 	FROM dh_feature  \n
 	WHERE hydrocode = :'hydrocode'  \n
 	AND bundle = :'bundle'  \n
@@ -47,7 +48,7 @@ WITH usgs_features AS (  \n
 	met.tstime, met.tsendtime,  \n
 	st_clip(  \n
 		st_union(met.rast),  \n
-		st_buffer(st_convexhull(fgeo.dh_geofield_geom),0.125)  \n
+		f.f_big_bbox  \n
 	) as rast  \n
 	FROM usgs_features as f  \n
 	LEFT JOIN field_data_dh_geofield as fgeo  \n
