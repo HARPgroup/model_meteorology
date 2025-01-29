@@ -37,7 +37,7 @@ select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\
 copy (  \n
 WITH usgs_features AS (  \n
 	SELECT *  \n
-	FROM dh_feature  \n
+	FROM dh_feature_fielded  \n
 	WHERE hydrocode = :'hydrocode'  \n
 	AND bundle = :'bundle'  \n
 	AND ftype = :'ftype'  \n
@@ -47,14 +47,9 @@ WITH usgs_features AS (  \n
 	met.tstime, met.tsendtime,  \n
 	st_clip(  \n
 		st_union(met.rast),  \n
-		st_buffer(st_convexhull(fgeo.dh_geofield_geom),0.125)  \n
+		st_buffer(st_convexhull(f.dh_geofield_geom),0.125)  \n
 	) as rast  \n
 	FROM usgs_features as f  \n
-	LEFT JOIN field_data_dh_geofield as fgeo  \n
-	ON (  \n
-		fgeo.entity_id = f.hydroid  \n
-		AND fgeo.entity_type = 'dh_feature'  \n
-	)  \n
 	JOIN(  \n
 		SELECT *  \n
 		FROM dh_timeseries_weather as met  \n
@@ -65,8 +60,8 @@ WITH usgs_features AS (  \n
 		AND ( (met.tsendtime <= :end_epoch) OR (:end_epoch = -1) )  \n
 		AND met.featureid = :covid  \n
 	) AS met  \n
-	ON fgeo.dh_geofield_geom && met.bbox  \n
-	GROUP BY met.featureid, met.tsendtime, met.tstime, fgeo.dh_geofield_geom  \n
+	ON f.dh_geofield_geom && met.bbox  \n
+	GROUP BY met.featureid, met.tsendtime, met.tstime, f.dh_geofield_geom  \n
 )
 ,tempDisagg as (  \n
 	SELECT met.featureid,  \n
@@ -75,11 +70,16 @@ WITH usgs_features AS (  \n
 		met.rast, 1,  \n
 		st_clip(  \n
 			st_resample(frac.rast,met.rast),  \n
-			ST_ConvexHull(met.rast)  \n
+			ST_ConvexHull(f.dh_geofield_geom)  \n
 		), 1,  \n
 		'[rast1] * [rast2]'  \n
 	) as rast  \n
-	FROM dh_timeseries_weather as frac  \n
+	FROM usgs_features as f  \n
+	JOIN dh_timeseries_weather as frac  
+  ON ( \n
+    f.dh_geofield_geom && frac.bbox  \n
+  )
+  \n
 	LEFT JOIN dh_variabledefinition as vf  \n
 	ON (frac.varid = vf.hydroid)  \n
 	LEFT JOIN metUnion as met  \n
