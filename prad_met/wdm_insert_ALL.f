@@ -10,11 +10,12 @@ C     FILE AND INPUT NAMES
       character     lseg*12
       character     wdmfname*64,msgfname*64
       character     csvfname*200
+      character     cbproot*200
       character     datasource*100, version*100, period*100
       character     longline*300
       integer last
 C     SIZE OF INPUT NAMES
-      integer lendatasource, lenversion, lenperiod, lenlseg
+      integer lendatasource, lenversion, lenperiod, lenlseg, lencbproot
 C     SIZE OF DATE ARRAYS
       integer ndate
       parameter (ndate=6)
@@ -53,6 +54,9 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       call lencl(version,lenversion)
       call lencl(period, lenperiod)
       call lencl(lseg, lenlseg)
+      call getenv("CBP_ROOT",cbproot)
+      print*, "CBP_ROOT=", cbproot
+      call lencl(cbproot, lencbproot)
       print*, lseg
       print*, "LSEG string length is ",lenlseg
 **********start and end dates for entire timeseries*********************
@@ -94,11 +98,11 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       hmax = 2.1
       ymin = 20.0
       ymax = 78.0
-      csvfname = '../../../'//
+      csvfname = cbproot(:lencbproot)//'/'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
      .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.PRC'
-      print*,csvfname
+      print*, 'Opening HPRC ', csvfname
       open(csvfile,file=csvfname,status='old',iostat=err)
 
       if (err.ne.0) stop 'ERROR opening .PRC file '
@@ -213,7 +217,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       hmax = 130.0
       ymin = 0.0
       ymax = 80.0
-      csvfname = '../../../'//
+      csvfname = cbproot(:lencbproot)//'/'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
      .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.TMP'
@@ -341,7 +345,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       hmax = 1.0
       ymin = 20.0
       ymax = 60.0
-      csvfname = '../../../'//
+      csvfname = cbproot(:lencbproot)//'/'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
      .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.PET'
@@ -463,7 +467,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       hmax = 100.0
       ymin = 0.0
       ymax = 50.0
-      csvfname = '../../../'//
+      csvfname = cbproot(:lencbproot)//'/'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
      .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.RAD'
@@ -592,7 +596,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       hmax = 120.0
       ymin = 0.0
       ymax = 20.0
-      csvfname = '../../../'//
+      csvfname = cbproot(:lencbproot)//'/'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
      .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.WND'
@@ -722,7 +726,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       hmax = 130.0
       ymin = 0.0
       ymax = 80.0
-      csvfname = '../../../'//
+      csvfname = cbproot(:lencbproot)//'/'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
      .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.DPT'
@@ -852,7 +856,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
              stop 'ERROR opening wdm'
       end if
 
-      csvfname = '../../../'//
+      csvfname = cbproot(:lencbproot)//'/'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
      .       '/'//'RNMax'//'/'//lseg(:lenlseg)//'.RNMax'
@@ -869,7 +873,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
 10050 continue
       close (csvfile)
 
-      csvfname = '../../../'//
+      csvfname = cbproot(:lencbproot)//'/'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
      .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.PRC'
@@ -916,7 +920,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       hmax = 10.0
       ymin = 0.0
       ymax = 10.0
-      csvfname = '../../../'//
+      csvfname = cbproot(:lencbproot)//'/'//
      .        'input/unformatted/'//
      .       datasource(:lendatasource)//'/'//version(:lenversion)//
      .       '/'//period(:lenperiod)//'/'//lseg(:lenlseg)//'.RAD'
@@ -1042,6 +1046,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
             print*, 'retcod = ', retcod
             stop 'ERROR closing wdm'
       end if
+      end if
 ************************************************************************
 ************************ ##### DCLC FINISH ##### ***********************
 ************************************************************************
@@ -1059,7 +1064,7 @@ C     ARRAY SIZES AND NUMBER OF VALUES IN TIMESERIES
       close (msgfile)
       return
 
-994   print*,'Problem reading file:',csvfname
+994   print*,'Problem reading file:',csvfname,' at line ',csvndata
       goto 999
 
 999   continue
