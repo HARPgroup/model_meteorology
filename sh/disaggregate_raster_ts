@@ -67,7 +67,10 @@ WITH usgs_features AS (  \n
 	SELECT met.featureid,  \n
 	frac.tstime, frac.tsendtime,  \n
 	ST_MapAlgebra(  \n
-		met.rast, 1,  \n
+		st_clip(  
+			met.rast,  
+			ST_ConvexHull(f.dh_geofield_geom)  
+		), 1, \n
 		st_clip(  \n
 			st_resample(frac.rast,met.rast),  \n
 			ST_ConvexHull(f.dh_geofield_geom)  \n
