@@ -15,7 +15,7 @@ end_epoch=-1
 if [ $# -gt 11 ]; then
   start_epoch=${12}
 fi
-if [ $# -gt 13 ]; then
+if [ $# -gt 12 ]; then
   end_epoch=${13}
 fi
 echo "called DISAGGREGATE_RASTER_TS $hydrocode $varkey $disaggregate_varkey $daily_varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $start_epoch $end_epoch"
