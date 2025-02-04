@@ -3,22 +3,23 @@ hydrocode=$1
 varkey=$2
 disaggregate_varkey=$3
 daily_varkey=$4
-raster_sql_file=$5
-raster_sum_file=$6
-db_host=$7
-db_name=$8
-bundle=$9
-ftype=${10}
-end_wdm=${11}
+resample_varkey=$5
+raster_sql_file=$6
+raster_sum_file=$7
+db_host=$8
+db_name=$9
+bundle=$10
+ftype=${11}
+end_wdm=${12}
 start_epoch=-1
 end_epoch=-1
-if [ $# -gt 11 ]; then
-  start_epoch=${12}
+if [ $# -gt 12 ]; then
+  start_epoch=${13}
 fi
-if [ $# -gt 13 ]; then
-  end_epoch=${13}
+if [ $# -gt 14 ]; then
+  end_epoch=${15}
 fi
-echo "called DISAGGREGATE_RASTER_TS $hydrocode $varkey $disaggregate_varkey $daily_varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $start_epoch $end_epoch"
+echo "called DISAGGREGATE_RASTER_TS $hydrocode $varkey $disaggregate_varkey $daily_varkey $resample_varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $start_epoch $end_epoch"
 echo "Checking bundle as ${bundle} and type as ${ftype}"
 raster_sql="
 \\set band '1' \n
