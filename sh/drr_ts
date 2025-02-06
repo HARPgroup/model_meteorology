@@ -74,16 +74,17 @@ WITH usgs_features AS (  \n
 ,tempDisagg as (  \n
 	SELECT met.featureid,  \n
 	frac.tstime, frac.tsendtime,  \n
-  CASE WHEN frac.rast IS NULL AND rt.rast IS NULL THEN 
-    st_clip(  
-        met.rast,  
-        ST_ConvexHull(f.dh_geofield_geom)  
-    )
-  CASE WHEN frac.rast IS NULL THEN 
-    st_clip(  
-        st_resample(met.rast,rt.rast),  
-        ST_ConvexHull(f.dh_geofield_geom)  
-    )
+  CASE \n 
+    WHEN frac.rast IS NULL AND rt.rast IS NULL THEN  \n
+      st_clip(  
+          met.rast,  
+          ST_ConvexHull(f.dh_geofield_geom)  
+      ) \n
+    WHEN frac.rast IS NULL THEN  \n
+      st_clip(  
+          st_resample(met.rast,rt.rast),  
+          ST_ConvexHull(f.dh_geofield_geom)  
+      ) \n
   ELSE ST_MapAlgebra(  \n
       st_clip(  
         st_resample(met.rast,rt.rast),  
