@@ -1,4 +1,9 @@
 #!/bin/bash
+if [ $# -lt 11 ]; then
+  echo "Use: drr_ts hydrocode ftype varkey daily_varkey resample_varkey raster_sql_file raster_sum_file db_host db_name bundle ftype tz_offset [start_epoch] [end_epoch]"
+  exit
+fi
+
 hydrocode=$1
 varkey=$2
 disaggregate_varkey=$3
@@ -10,7 +15,7 @@ db_host=$8
 db_name=$9
 bundle=${10}
 ftype=${11}
-end_wdm=${12}
+tz_offset=0
 start_epoch=-1
 end_epoch=-1
 if [ $# -gt 12 ]; then
@@ -30,6 +35,7 @@ raster_sql="
 \\set resample_varkey '$resample_varkey' \n
 \\set bundle '${bundle}' \n
 \\set ftype '${ftype}' \n
+\\set tz_offset $tz_offset \n 
 \\set start_epoch $start_epoch \n 
 \\set end_epoch $end_epoch \n
 \\set end_wdm $end_wdm \n
@@ -129,7 +135,7 @@ SELECT * FROM (  \n
 	yr, mo, da, hr,  \n
 	0.0393701 * stats precip_in  \n
 	FROM met  \n
-	WHERE tsendtime <= :end_wdm \n
+	WHERE tsendtime <= (:end_epoch + :tz_offset) \n
 ) as metResults  \n
 ORDER BY metResults.tsendtime  \n
 ) to :'fname' WITH HEADER CSV;"
