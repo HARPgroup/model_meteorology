@@ -18,10 +18,13 @@ tz_offset=0
 start_epoch=-1
 end_epoch=-1
 if [ $# -gt 10 ]; then
-  start_epoch=${11}
+  tz_offset=${11}
 fi
 if [ $# -gt 11 ]; then
-  end_epoch=${12}
+  start_epoch=${12}
+fi
+if [ $# -gt 12 ]; then
+  end_epoch=${13}
 fi
 echo "called $drr_ts $hydrocode $varkey $disaggregate_varkey $resample_varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $tz_offset $start_epoch $end_epoch"
 echo "Checking bundle as ${bundle} and type as ${ftype}"
