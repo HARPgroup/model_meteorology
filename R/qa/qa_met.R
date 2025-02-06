@@ -11,6 +11,12 @@ metdf <- data.frame(
   'metric' = c('precip_annual_max_in','precip_annual_max_in', 'precip_annual_max_in'),
   'runlabel' = c('m2d_precip_annual_max_in', 'nldrst_precip_annual_max_in', 'prism_precip_annual_max_in')
 )
+metdf <- rbind(
+  metdf, c('met-1.0', 'nldas2rst', 'precip_annual_min_in', 'nldrst_pmin_in')
+)
+metdf <- rbind(
+  metdf, c('met-1.0', 'prismrst', 'precip_annual_min_in', 'prism_pmin_in')
+)
 
 met_data <- om_vahydro_metric_grid(
   metric = metric, runids = metdf, bundle = "landunit", ftype = "cbp6_landseg",
@@ -19,7 +25,53 @@ met_data <- om_vahydro_metric_grid(
 )
 nrow(met_data[which(! is.na(met_data$prism_precip_annual_max_in)),])
 
-landseg = "N24021"
+land_df <- data.frame( 'model_version'='cbp-6.1','runid'='subsheds',metric='l90_RUnit',runlabel='Runit L90 NLDAS')
+land_df <- rbind(land_df, c('cbp-6.1', 'pubsheds', 'l90_RUnit', 'Runit L90 PRISM'))
+land_data <- om_vahydro_metric_grid(
+  metric = metric, runids = land_df, bundle = "landunit", ftype = "cbp6_landseg",
+  ds = ds, debug=TRUE
+)
+
+
+riv_df <- data.frame( model_version='cbp-6.1',runid='pubsheds',metric='l90_Qout',runlabel='L90 PRISM')
+riv_df <- rbind(riv_df, c('cbp-6.1', 'subsheds', 'l90_Qout', 'L90 NLDAS'))
+riv_df <- rbind(riv_df, c('vahydro-1.0', 'runid_400', 'l90_Qout', 'L90 cbp6'))
+riv_data <- om_vahydro_metric_grid(
+  metric = metric, runids = riv_df, bundle = "watershed", ftype = "vahydro",
+  ds = ds, debug=TRUE
+)
+riv_data$riverseg <- gsub("vahydrosw_wshed_", "", riv_data$hydrocode)
+potomac_lf <- fn_extract_basin(riv_data, "PM7_4820_0001")
+
+boxplot(met_data$nldrst_precip_annual_max_in, met_data$prism_precip_annual_max_in , names = c('nldas(rst)', 'prism(rst)'), main="Max Annual Precip 1984-2023")
+
+boxplot(met_data$nldrst_pmin_in, met_data$prism_pmin_in, names = c('nldas(rst)', 'prism(rst)'), main="Min Annual Precip 1984-2023")
+bigdiffs <- sqldf("select hydrocode from met_data where abs((prism_pmin_in - nldrst_pmin_in)/nldrst_pmin_in) >= 0.2")
+
+big_diff_lrsegs <- sqldf(
+  paste(
+    "select a.hydrocode as landseg, replace(b.hydrocode,'vahydrosw_wshed_','') as riverseg
+     from dh_feature_fielded as a 
+     left outer join dh_feature_fielded as b 
+     on (
+       a.dh_geofield_geom && b.dh_geofield_geom 
+       and b.bundle='watershed'
+       and b.ftype = 'vahydro'
+     )
+     where a.ftype = 'cbp6_landseg'
+       and a.bundle = 'landunit'
+       and a.hydrocode in (", 
+       paste0(
+         "'",stringr::str_replace_all(
+           paste(as.vector(bigdiffs$hydrocode),collapse=","), 
+           ",", "','"),
+         "'"
+       ),
+    ")"
+  ), connection = ds$connection
+)
+
+landseg = "N51171"
 landseg_feature <- RomFeature$new(
   ds,config = list(
     hydrocode=landseg,bundle='landunit',ftype='cbp6_landseg'
@@ -28,6 +80,8 @@ landseg_feature <- RomFeature$new(
 )
 met_info = landseg_feature$propvalues(propcode = 'met-1.0')[,c('propname', 'pid', 'propcode')]
 met_model <- RomProperty$new(ds,list(pid=met_info$pid),TRUE)
+
+
 met_nested <- ds$get_json_prop(met_model$pid)
 model_info = landseg_feature$propvalues(propcode = 'cbp-6.1')[,c('propname', 'pid', 'propcode')]
 land_model <- RomProperty$new(ds,list(pid=model_info$pid),TRUE)
@@ -40,5 +94,7 @@ nl_ann <- sqldf("select yr,avg(tsvalue) as pavg, max(tsvalue) as pmax from (sele
 pr_ann <- sqldf("select yr,avg(tsvalue) as pavg, max(tsvalue) as pmax from (select yr, mo, sum(tsvalue) as tsvalue from prdat group by yr, mo) group by yr order by yr")
 
 comp_ann <- sqldf("select a.yr, a.pmax as prism, b.pmax as nldas2 from pr_ann as a, nl_ann as b where a.yr = b.yr order by a.yr")
-barplot((comp_ann$prism - comp_ann$nldas2) ~ comp_ann$yr, main="Monthly Max Comparison",ylab = "Max Month PRISM - NLDAS in.")
+barplot((comp_ann$prism - comp_ann$nldas2) ~ comp_ann$yr, main=paste("Monthly Max Comparison",landseg),ylab = "Max Month PRISM - NLDAS in.")
 
+
+argst <- c( 'N51069', 'pubsheds', '/media/model/p6/out/land/pubsheds/eos/N51069_0111-0211-0411.csv', '/media/model/p6/out/land/pubsheds/images', 'cbp-6.1', 'cbp6_landseg')
