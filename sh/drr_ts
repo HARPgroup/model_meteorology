@@ -112,7 +112,7 @@ WITH usgs_features AS (  \n
     AND frac.tsendtime <= met.tsendtime  \n
 	) \n
 	LEFT JOIN  raster_templates as rt
-	ON (varkey = :'resample_varkey')
+	ON (rt.varkey = :'resample_varkey')
 	WHERE  ( (met.tstime >= :start_epoch) OR (:start_epoch = -1) )  \n
 	AND ( (met.tsendtime <= :end_epoch) OR (:end_epoch = -1) )  \n
 )
