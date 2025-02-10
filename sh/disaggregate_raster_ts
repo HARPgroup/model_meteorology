@@ -114,7 +114,7 @@ SELECT * FROM (  \n
 	yr, mo, da, hr,  \n
 	0.0393701 * stats precip_in  \n
 	FROM met  \n
-	WHERE tsendtime <= :end_wdm \n
+	WHERE tsendtime <= :end_epoch \n
 ) as metResults  \n
 ORDER BY metResults.tsendtime  \n
 ) to :'fname' WITH HEADER CSV;"
