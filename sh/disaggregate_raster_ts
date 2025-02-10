@@ -9,7 +9,7 @@ db_host=$7
 db_name=$8
 bundle=$9
 ftype=${10}
-end_wdm=${11}
+dissag_tz_offset=${11}
 start_epoch=-1
 end_epoch=-1
 if [ $# -gt 11 ]; then
@@ -30,7 +30,7 @@ raster_sql="
 \\set ftype '${ftype}' \n
 \\set start_epoch $start_epoch \n 
 \\set end_epoch $end_epoch \n
-\\set end_wdm $end_wdm \n
+\\set dissag_tz_offset $dissag_tz_offset \n
 \\set fname '${raster_sum_file}' \n
 select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\gset \n
 	
@@ -59,7 +59,7 @@ WITH usgs_features AS (  \n
 		ON (met.varid = b.hydroid)  \n
 		WHERE b.varkey=:'varkey'  \n
 		AND ( (met.tsendtime >= :start_epoch) OR (:start_epoch = -1) )  \n
-		AND ( (met.tsendtime <= :end_epoch) OR (:end_epoch = -1) )  \n
+		AND ( (met.tsendtime <= (:end_epoch + :dissag_tz_offset)) OR (:end_epoch = -1) )  \n
 		AND met.featureid = :covid  \n
 	) AS met  \n
 	ON f.dh_geofield_geom && met.bbox  \n
