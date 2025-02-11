@@ -166,7 +166,7 @@ copy (  \n
 	   FROM met  \n
 	   WHERE tsendtime <= :end_epoch  \n
 	 ) as metResults  \n
-	 ORDER BY metResults.tsendtime ;  \n
+	 ORDER BY metResults.tsendtime  \n
 ) to :'fname' WITH HEADER CSV;"
 # turn off the expansion of the asterisk
 set -f
