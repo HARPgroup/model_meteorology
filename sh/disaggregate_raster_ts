@@ -35,88 +35,115 @@ raster_sql="
 select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\gset \n
 	
 \\\timing ON \n
-	
+CREATE TEMP TABLE tmp_metUnion as (  \n
+ WITH usgs_features AS (  \n
+   SELECT *  \n
+   FROM dh_feature_fielded  \n
+   WHERE hydrocode = :'hydrocode'  \n
+   AND bundle = :'bundle'  \n
+   AND ftype = :'ftype'  \n
+ )  \n
+ ,metUnion AS (  \n
+   SELECT met.featureid,  \n
+   met.tstime, met.tsendtime,  \n
+   st_clip(  \n
+     st_union(met.rast),  \n
+     st_buffer(st_convexhull(f.dh_geofield_geom),0.125)  \n
+   ) as rast  \n
+   FROM usgs_features as f  \n
+   JOIN(  \n
+     SELECT *  \n
+     FROM dh_variabledefinition as b  \n
+     LEFT JOIN ts_rast_tile as met  \n
+     ON (met.varid = b.hydroid)  \n
+     WHERE b.varkey=:'varkey'  \n
+		AND ( (met.tsendtime >= :start_epoch) OR (:start_epoch = -1) )    \n
+		AND ( (met.tsendtime <= (:end_epoch + :dissag_tz_offset)) OR (:end_epoch = -1) )    \n
+       AND met.featureid = :covid  \n
+   ) AS met  \n
+   ON f.dh_geofield_geom && met.bbox  \n
+   GROUP BY met.featureid, met.tsendtime, met.tstime, f.dh_geofield_geom  \n
+ )  \n
+ 	SELECT * FROM metUnion  \n
+);  \n
+
+CREATE TEMP TABLE tmp_metDisagg as (  \n
+ WITH usgs_features AS (  \n
+   SELECT *  \n
+   FROM dh_feature_fielded  \n
+   WHERE hydrocode = :'hydrocode'  \n
+   AND bundle = :'bundle'  \n
+   AND ftype = :'ftype'  \n
+ )  \n
+ ,metDisagg AS (  \n
+   SELECT fracmet.featureid,  \n
+   fracmet.tstime, fracmet.tsendtime,  \n
+   st_clip(  \n
+     st_union(fracmet.rast),  \n
+     st_buffer(st_convexhull(f.dh_geofield_geom),0.125)  \n
+   ) as rast  \n
+   FROM usgs_features as f  \n
+   LEFT OUTER JOIN(  \n
+     SELECT *  \n
+     FROM dh_variabledefinition as b  \n
+     LEFT JOIN ts_rast_tile as fracmet  \n
+       ON (fracmet.varid = b.hydroid)  \n
+       WHERE b.varkey=:'disag_varkey'  \n
+       AND ( (fracmet.tsendtime >= :start_epoch) OR (:start_epoch = -1) )  \n
+       AND ( (fracmet.tsendtime <= :end_epoch) OR (:end_epoch = -1) )  \n
+       AND fracmet.featureid = :covid  \n
+   ) AS fracmet  \n
+   ON f.dh_geofield_geom && fracmet.bbox  \n
+   GROUP BY fracmet.featureid, fracmet.tsendtime, fracmet.tstime, f.dh_geofield_geom  \n
+ )  \n
+ 	SELECT * FROM metDisagg  \n
+);  \n
+
 copy (  \n
-WITH usgs_features AS (  \n
-	SELECT *  \n
-	FROM dh_feature_fielded  \n
-	WHERE hydrocode = :'hydrocode'  \n
-	AND bundle = :'bundle'  \n
-	AND ftype = :'ftype'  \n
-)  \n
-,metUnion AS (  \n
-	SELECT met.featureid,  \n
-	met.tstime, met.tsendtime,  \n
-	st_clip(  \n
-		st_union(met.rast),  \n
-		st_buffer(st_convexhull(f.dh_geofield_geom),0.125)  \n
-	) as rast  \n
-	FROM usgs_features as f  \n
-	JOIN(  \n
-		SELECT *  \n
-		FROM dh_timeseries_weather as met  \n
-		LEFT JOIN dh_variabledefinition as b  \n
-		ON (met.varid = b.hydroid)  \n
-		WHERE b.varkey=:'varkey'  \n
-		AND ( (met.tsendtime >= :start_epoch) OR (:start_epoch = -1) )  \n
-		AND ( (met.tsendtime <= (:end_epoch + :dissag_tz_offset)) OR (:end_epoch = -1) )  \n
-		AND met.featureid = :covid  \n
-	) AS met  \n
-	ON f.dh_geofield_geom && met.bbox  \n
-	GROUP BY met.featureid, met.tsendtime, met.tstime, f.dh_geofield_geom  \n
-)
-,tempDisagg as (  \n
-	SELECT met.featureid,  \n
-	frac.tstime, frac.tsendtime,  \n
-	ST_MapAlgebra(  \n
-		st_clip(  
-			met.rast,  
-			ST_ConvexHull(f.dh_geofield_geom)  
-		), 1, \n
-		st_clip(  \n
-			st_resample(frac.rast,met.rast),  \n
-			ST_ConvexHull(f.dh_geofield_geom)  \n
-		), 1,  \n
-		'[rast1] * [rast2]'  \n
-	) as rast  \n
-	FROM usgs_features as f  \n
-	JOIN dh_timeseries_weather as frac  
-  ON ( \n
-    f.dh_geofield_geom && frac.bbox  \n
-  )
-  \n
-	LEFT JOIN dh_variabledefinition as vf  \n
-	ON (frac.varid = vf.hydroid)  \n
-	LEFT JOIN metUnion as met  \n
-	ON (  \n
-	frac.tstime >= met.tstime  \n
-	AND frac.tsendtime <= met.tsendtime  \n
+	WITH tempDisagg as (  \n
+		SELECT met.featureid,  \n
+		frac.tstime, frac.tsendtime,  \n
+		ST_MapAlgebra(  \n
+			st_clip(  
+				met.rast,  
+				ST_ConvexHull(f.dh_geofield_geom)  
+			), 1, \n
+			st_clip(  \n
+				st_resample(frac.rast,met.rast),  \n
+				ST_ConvexHull(f.dh_geofield_geom)  \n
+			), 1,  \n
+			'[rast1] * [rast2]'  \n
+		) as rast  \n
+		FROM usgs_features as f   \n
+		LEFT JOIN tmp_metUnion as met   \n
+		ON ( 1 = 1 )   \n
+		LEFT JOIN tmp_metDisagg as frac   \n
+		ON (   \n
+			frac.tstime >= met.tstime   \n
+			AND frac.tsendtime <= met.tsendtime   \n
+		)  \n
+	)
+	,met as (  \n
+		Select :'hydrocode' as hydrocode,  \n
+		met.featureid, to_timestamp(met.tsendtime) as obs_date,  \n
+		extract(year from to_timestamp(met.tsendtime)) as yr,  \n
+		extract(month from to_timestamp(met.tsendtime)) as mo,  \n
+		extract(day from to_timestamp(met.tsendtime)) as da,  \n
+		extract(hour from to_timestamp(met.tsendtime)) as hr,  \n
+		met.tstime,met.tsendtime,  \n
+		(ST_summarystats(met.rast, :'band', TRUE)).mean as stats  \n
+		FROM tempDisagg as met  \n
 	)  \n
-	WHERE vf.varkey = :'disag_varkey'  \n
-	AND ( (frac.tstime >= :start_epoch) OR (:start_epoch = -1) )  \n
-	AND ( (frac.tsendtime <= :end_epoch) OR (:end_epoch = -1) )  \n
-)
-,met as (  \n
-	Select :'hydrocode' as hydrocode,  \n
-	met.featureid, to_timestamp(met.tsendtime) as obs_date,  \n
-	extract(year from to_timestamp(met.tsendtime)) as yr,  \n
-	extract(month from to_timestamp(met.tsendtime)) as mo,  \n
-	extract(day from to_timestamp(met.tsendtime)) as da,  \n
-	extract(hour from to_timestamp(met.tsendtime)) as hr,  \n
-	met.tstime,met.tsendtime,  \n
-	(ST_summarystats(met.rast, :'band', TRUE)).mean as stats  \n
-	FROM tempDisagg as met  \n
-)  \n
-SELECT * FROM (  \n
-	SELECT hydrocode,  \n
-	featureid, obs_date,  \n
-	tstime,tsendtime,  \n
-	yr, mo, da, hr,  \n
-	0.0393701 * stats precip_in  \n
-	FROM met  \n
-	WHERE tsendtime <= :end_epoch \n
-) as metResults  \n
-ORDER BY metResults.tsendtime  \n
+	SELECT * FROM (  \n
+		SELECT hydrocode,  \n
+		featureid, obs_date,  \n
+		tstime,tsendtime,  \n
+		yr, mo, da, hr,  \n
+		0.0393701 * stats precip_in  \n
+		FROM met  \n
+		WHERE tsendtime <= :end_epoch \n
+	) as metResults  \n
+	ORDER BY metResults.tsendtime  \n
 ) to :'fname' WITH HEADER CSV;"
 # turn off the expansion of the asterisk
 set -f
