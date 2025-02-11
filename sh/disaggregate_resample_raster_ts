@@ -19,7 +19,7 @@ fi
 if [ $# -gt 13 ]; then
   end_epoch=${14}
 fi
-echo "called DISAGGREGATE_RASTER_TS $hydrocode $varkey $disaggregate_varkey $daily_varkey $resample_varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $start_epoch $end_epoch"
+echo "called DISAGGREGATE_RASTER_TS $hydrocode $varkey $disaggregate_varkey $daily_varkey $resample_varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $dissag_tz_offset $start_epoch $end_epoch"
 echo "Checking bundle as ${bundle} and type as ${ftype}"
 #SQL query operates through a series of WITH statements:
 #usgs_features = Selecting the 1 feature from dh_feature_fielded to get hydroid and geometry
