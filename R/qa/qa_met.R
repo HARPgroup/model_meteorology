@@ -35,6 +35,7 @@ land_data <- om_vahydro_metric_grid(
 
 riv_df <- data.frame( model_version='cbp-6.1',runid='pubsheds',metric='l90_Qout',runlabel='L90 PRISM')
 riv_df <- rbind(riv_df, c('cbp-6.1', 'subsheds', 'l90_Qout', 'L90 NLDAS'))
+riv_df <- rbind(riv_df, c('usgs-2.0', 'runid_400', 'l90_Qout', 'L90 USGS'))
 riv_df <- rbind(riv_df, c('vahydro-1.0', 'runid_400', 'l90_Qout', 'L90 cbp6'))
 riv_data <- om_vahydro_metric_grid(
   metric = metric, runids = riv_df, bundle = "watershed", ftype = "vahydro",
@@ -98,3 +99,13 @@ barplot((comp_ann$prism - comp_ann$nldas2) ~ comp_ann$yr, main=paste("Monthly Ma
 
 
 argst <- c( 'N51069', 'pubsheds', '/media/model/p6/out/land/pubsheds/eos/N51069_0111-0211-0411.csv', '/media/model/p6/out/land/pubsheds/images', 'cbp-6.1', 'cbp6_landseg')
+
+gageid="01646500"
+hcode=paste0("usgs_ws_", gageid)
+ts_prism <- read.csv(paste0('http://deq1.bse.vt.edu:81/met/PRISM/precip/',hcode,"_precip_daily.csv"))
+ts_nldas2 <- read.csv(paste0('http://deq1.bse.vt.edu:81/met/PRISM/precip/',hcode,"_precip_daily.csv"))
+ts_prism$flow_in <- (((ts_prism$obs_flow / 1.547) * 3.07) / (640 * ts_prism$area_sqmi)) /12
+plot(ts_prism$flow_in ~ ts_prism$precip_in)
+prism_lm <- lm(ts_prism$flow_in ~ ts_prism$precip_in)
+summary(prism_lm)
+
