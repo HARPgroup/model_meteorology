@@ -60,9 +60,24 @@ with dailyUnion as (
 	WHERE hourly_variable.varkey= :'hourlyvarkey'
 		AND ( hourly.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400)
 		AND ( hourly.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))
+),
+frac_daily_tile as (
+	select frac.tstime, frac.tsendtime, frac.featureid,
+	frac.entity_type,
+	st_tile(frac.rast, 1, 16, 16) as rast,
+	frac.bbox
+	FROM frac_daily as frac
+),
+frac_daily_final as (
+	select finalFrac.tstime, finalFrac.tsendtime, finalFrac.featureid,
+	finalFrac.entity_type,
+	finalFrac.rast,
+	ST_ConvexHull(finalFrac.rast) as bbox
+	FROM frac_daily as frac_daily_tile
+
 )
 INSERT INTO dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid)  \n
-SELECT frac.* FROM frac_daily as frac  \n
+SELECT frac.* FROM frac_daily_final as frac  \n
 LEFT JOIN dh_timeseries_weather as dupe  \n
 on (  \n
   frac.tstime = dupe.tstime  \n

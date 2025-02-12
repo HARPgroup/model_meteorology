@@ -12,8 +12,8 @@
 
 #We set up a local name reference to the config array passed in by the user to easily access its value
 #CAUTION: Changes to confignr likely impact the original array passed by user!
-if [ $# -lt 8 ]; then
-  echo "Use: met_raster2dn.sh datasource finalTiff tstime tsendtime entity_type varkey extent_hydrocode db_name force"
+if [ $# -lt 11 ]; then
+  echo "Use: met_raster2dn.sh datasource finalTiff tstime tsendtime entity_type varkey extent_hydrocode tile_size db_name db_host force"
   exit
 fi
 datasource=$1
@@ -23,18 +23,19 @@ tsendtime=$4
 entity_type=$5
 varkey=$6
 extent_hydrocode=$7
-db_name=$8
-db_host=$9
+tile_size=$8
+db_name=$9
+db_host=${10}
 force=0
-if [ $# -gt 9 ]; then
-  force=${10}
+if [ $# -gt 10 ]; then
+  force=${11}
 fi
 echo "Creating sql file to import raster..."
 #Create sql file that will add the raster (-a for amend or -d for drop and recreate) into the target table
 #The -t option tiles the raster for easier loading
 tmp_sql_file=tmp_${datasource}-${tstime}-test.sql
 tmp_tbl_name="tmp_${datasource}_${tstime}"
-raster2pgsql -d -t 1000x1000 $finalTiff $tmp_tbl_name > $tmp_sql_file
+raster2pgsql -d -t "${tile_size}x${tile_size}" $finalTiff $tmp_tbl_name > $tmp_sql_file
 
 echo "Sending raster to db..."
 #Execute sql file to bring rasters into database (alpha)
