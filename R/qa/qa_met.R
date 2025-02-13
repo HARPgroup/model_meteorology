@@ -32,17 +32,45 @@ land_data <- om_vahydro_metric_grid(
   ds = ds, debug=TRUE
 )
 
+rseg_hydrocode = 'vahydrosw_wshed_PM7_4581_4580'
+riverseg_feature <- RomFeature$new(ds, list(hydrocode=rseg_hydrocode,bundle='watershed',ftype='vahydro'), TRUE)
+rseg_model <- RomProperty$new(ds, list(featureid=riverseg_feature$hydroid, propcode='cbp-6.1', entity_type='dh_feature' ), TRUE)
+rseg_nested <- ds$get_json_prop(rseg_model$pid)
 
-riv_df <- data.frame( model_version='cbp-6.1',runid='pubsheds',metric='l90_Qout',runlabel='L90 PRISM')
-riv_df <- rbind(riv_df, c('cbp-6.1', 'subsheds', 'l90_Qout', 'L90 NLDAS'))
-riv_df <- rbind(riv_df, c('usgs-2.0', 'runid_400', 'l90_Qout', 'L90 USGS'))
-riv_df <- rbind(riv_df, c('vahydro-1.0', 'runid_400', 'l90_Qout', 'L90 cbp6'))
+
+model_metric = 'l07_Qout'
+riv_df <- data.frame( model_version='cbp-6.1',runid='pubsheds',metric=model_metric,runlabel='PRISM')
+riv_df <- rbind(riv_df, c('cbp-6.1', 'subsheds', model_metric, 'NLDAS'))
+riv_df <- rbind(riv_df, c('usgs-2.0', 'usgs', model_metric, 'USGS'))
+riv_df <- rbind(riv_df, c('vahydro-1.0', 'runid_400', model_metric, 'vahydro'))
 riv_data <- om_vahydro_metric_grid(
   metric = metric, runids = riv_df, bundle = "watershed", ftype = "vahydro",
   ds = ds, debug=TRUE
 )
 riv_data$riverseg <- gsub("vahydrosw_wshed_", "", riv_data$hydrocode)
+riv_data$nldas2_error <- (riv_data$NLDAS - riv_data$USGS) / riv_data$USGS
+riv_data$vahydro_error <- (riv_data$vahydro - riv_data$USGS) / riv_data$USGS
+riv_data$prism_error <- (riv_data$PRISM - riv_data$USGS) / riv_data$USGS
 potomac_lf <- fn_extract_basin(riv_data, "PM7_4820_0001")
+#potomac_lf = riv_data
+boxplot(
+  potomac_lf$nldas2_error,
+  potomac_lf$vahydro_error,
+  potomac_lf$prism_error, 
+  ylim=c(-1.0,2.0),
+  names = c('NLDAS2', 'VAHydro', 'PRISM'),
+  main = paste("% Error for", model_metric)
+)
+boxplot(
+  riv_data$nldas2_error,
+#  riv_data$vahydro_error,
+  riv_data$prism_error, 
+  ylim=c(-1.0,1.0),
+#  names = c('NLDAS2', 'VAHydro', 'PRISM'),
+  names = c('NLDAS2', 'PRISM'),
+  main = paste("% Error for", model_metric)
+)
+
 
 boxplot(met_data$nldrst_precip_annual_max_in, met_data$prism_precip_annual_max_in , names = c('nldas(rst)', 'prism(rst)'), main="Max Annual Precip 1984-2023")
 
@@ -108,4 +136,8 @@ ts_prism$flow_in <- (((ts_prism$obs_flow / 1.547) * 3.07) / (640 * ts_prism$area
 plot(ts_prism$flow_in ~ ts_prism$precip_in)
 prism_lm <- lm(ts_prism$flow_in ~ ts_prism$precip_in)
 summary(prism_lm)
+
+# input for QA f summary
+argst <- c("PM7_4581_4580", "pubsheds", "/media/model/p6/out/river/pubsheds/hydr/PM7_4581_4580_hydrd_wy.csv", "cbp-6.1",
+"vahydro", "/media/model/p6/out/river/pubsheds/json/")
 
