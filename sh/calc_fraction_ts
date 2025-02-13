@@ -13,6 +13,7 @@ rastersql="
 \\set fractionvarkey '$fractionvarkey' \n
 \\set end_datetime '$end_datetime' \n
 
+CREATE temp table ts_rast_tile as (  \n
 with daily_union as ( \n
  SELECT min(daily.tstime) as tstime, \n
 	max(daily.tsendtime) as tsendtime,  \n
@@ -43,7 +44,36 @@ frac_daily as (  \n
  WHERE hourly_variable.varkey= :'hourlyvarkey'  \n
 	AND ( hourly.tsendtime >  extract(epoch from :'end_datetime'::timestamptz) - 86400)  \n
 	AND ( hourly.tsendtime <= extract(epoch from :'end_datetime'::timestamptz)) \n
-) \n
+),
+frac_daily_tile as (
+	select frac.tstime, frac.tsendtime, frac.featureid,
+	frac.entity_type,
+	st_tile(frac.rast, 1, 16, 16) as rast,
+	frac.bbox,
+	frac.varid
+	FROM frac_daily as frac
+),
+select finalFrac.tstime, finalFrac.tsendtime, finalFrac.featureid,  \n
+	finalFrac.varid,  \n
+	finalFrac.entity_type,  \n
+	finalFrac.rast,  \n
+	ST_ConvexHull(finalFrac.rast) as bbox  \n
+FROM frac_daily_tile as finalFrac  \n
+)  \n
+
+
+-- create an index  \n
+CREATE INDEX trast_ix ON ts_rast_tile USING bbox;  \n
+
+INSERT INTO dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid)  \n
+SELECT frac.* FROM ts_rast_tile as frac  \n
+LEFT JOIN dh_timeseries_weather as dupe  \n
+on (  \n
+  frac.tstime = dupe.tstime  \n
+  and frac.tsendtime = dupe.tsendtime  \n
+  and frac.bbox = dupe.bbox  \n
+  and frac.varid = dupe.varid)  \n
+WHERE dupe.tid IS null;"
 INSERT INTO dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid)  \n
 SELECT frac.* FROM frac_daily as frac  \n
 LEFT JOIN dh_timeseries_weather as dupe  \n

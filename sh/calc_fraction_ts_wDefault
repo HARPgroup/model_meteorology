@@ -12,74 +12,78 @@ rastersql="
 \\set dailyvarkey '$dailyvarkey' \n
 \\set fractionvarkey '$fractionvarkey' \n
 \\set end_datetime '$end_datetime' \n
-with dailyUnion as (
-	SELECT min(daily.tstime) as tstime,
-		max(daily.tsendtime) as tsendtime,
-		ST_UNION(daily.rast,'sum') as rast,
-		daily_variable.hydroid as varid
-	FROM dh_timeseries_weather as daily
-	LEFT JOIN dh_variabledefinition as daily_variable
-	on (daily.varid = daily_variable.hydroid)
-	WHERE daily_variable.varkey= :'dailyvarkey'
-		AND ( daily.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400)
-		AND ( daily.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))
-	GROUP BY daily_variable.hydroid, extract(day from to_timestamp(daily.tstime - 43200) at time zone 'UTC')
-)
-,dailyNoZeroes as (
-	SELECT tstime, tsendtime,
-	St_Reclass(rast, 1, '[0-0]:1-1, [0.0000001-99999]:0.0000001-99999', '64BF',9999 ) as rast,
-	varid
-	FROM dailyUnion
-)
-,dailyDefault as (
-	SELECT tstime, tsendtime,
-	St_Reclass(rast, 1, '[0-0]:1-1, [0.0000001-99999]:0-0', '64BF',9999) as rast,
-	varid
-	FROM dailyUnion
-)
-,frac_daily as (
-	SELECT hourly.tstime,hourly.tsendtime,
-		hourly.featureid, hourly.entity_type,
-		st_mapalgebra(
-			st_mapalgebra(hourly.rast, 1, dailyNoZeroes.rast, 1,'[rast1] / [rast2]'), 1,
-			dailyDefault.rast, 1,'[rast1]+ ([rast2] / 24)'
-		) as rast,
-		hourly.bbox,
-		fraction.hydroid as varid
-	FROM dh_timeseries_weather as hourly
-	LEFT JOIN dh_variabledefinition as fraction
-	ON (fraction.varkey = :'fractionvarkey')
-	LEFT JOIN dailyNoZeroes as dailyNoZeroes
-	ON (hourly.tsendtime > dailyNoZeroes.tstime
-	and hourly.tsendtime <= dailyNoZeroes.tsendtime)
-	LEFT JOIN dailyDefault as dailyDefault
-	ON (hourly.tsendtime > dailyDefault.tstime
-	and hourly.tsendtime <= dailyDefault.tsendtime)
-	LEFT JOIN dh_variabledefinition as hourly_variable
-	on (hourly.varid = hourly_variable.hydroid)
-	WHERE hourly_variable.varkey= :'hourlyvarkey'
-		AND ( hourly.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400)
-		AND ( hourly.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))
-),
-frac_daily_tile as (
-	select frac.tstime, frac.tsendtime, frac.featureid,
-	frac.entity_type,
-	st_tile(frac.rast, 1, 16, 16) as rast,
-	frac.bbox,
-	frac.varid
-	FROM frac_daily as frac
-),
-frac_daily_final as (
-	select finalFrac.tstime, finalFrac.tsendtime, finalFrac.featureid,
-	finalFrac.varid,
-	finalFrac.entity_type,
-	finalFrac.rast,
-	ST_ConvexHull(finalFrac.rast) as bbox
-	FROM frac_daily_tile as finalFrac
 
-)
+CREATE temp table ts_rast_tile as (  \n
+with dailyUnion as (  \n
+	SELECT min(daily.tstime) as tstime,  \n
+		max(daily.tsendtime) as tsendtime,  \n
+		ST_UNION(daily.rast,'sum') as rast,  \n
+		daily_variable.hydroid as varid  \n
+	FROM dh_timeseries_weather as daily  \n
+	LEFT JOIN dh_variabledefinition as daily_variable  \n
+	on (daily.varid = daily_variable.hydroid)  \n
+	WHERE daily_variable.varkey= :'dailyvarkey'  \n
+		AND ( daily.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400)  \n
+		AND ( daily.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))  \n
+	GROUP BY daily_variable.hydroid, extract(day from to_timestamp(daily.tstime - 43200) at time zone 'UTC')  \n
+)  \n
+,dailyNoZeroes as (  \n
+	SELECT tstime, tsendtime,  \n
+	St_Reclass(rast, 1, '[0-0]:1-1, [0.0000001-99999]:0.0000001-99999', '64BF',9999 ) as rast,  \n
+	varid  \n
+	FROM dailyUnion  \n
+)  \n
+,dailyDefault as (  \n
+	SELECT tstime, tsendtime,  \n
+	St_Reclass(rast, 1, '[0-0]:1-1, [0.0000001-99999]:0-0', '64BF',9999) as rast,  \n
+	varid  \n
+	FROM dailyUnion  \n
+)  \n
+,frac_daily as (  \n
+	SELECT hourly.tstime,hourly.tsendtime,  \n
+		hourly.featureid, hourly.entity_type,  \n
+		st_mapalgebra(  \n
+			st_mapalgebra(hourly.rast, 1, dailyNoZeroes.rast, 1,'[rast1] / [rast2]'), 1,  \n
+			dailyDefault.rast, 1,'[rast1]+ ([rast2] / 24)'  \n
+		) as rast,  \n
+		hourly.bbox,  \n
+		fraction.hydroid as varid  \n
+	FROM dh_timeseries_weather as hourly  \n
+	LEFT JOIN dh_variabledefinition as fraction  \n
+	ON (fraction.varkey = :'fractionvarkey')  \n
+	LEFT JOIN dailyNoZeroes as dailyNoZeroes  \n
+	ON (hourly.tsendtime > dailyNoZeroes.tstime  \n
+	and hourly.tsendtime <= dailyNoZeroes.tsendtime)  \n
+	LEFT JOIN dailyDefault as dailyDefault  \n
+	ON (hourly.tsendtime > dailyDefault.tstime  \n
+	and hourly.tsendtime <= dailyDefault.tsendtime)  \n
+	LEFT JOIN dh_variabledefinition as hourly_variable  \n
+	on (hourly.varid = hourly_variable.hydroid)  \n
+	WHERE hourly_variable.varkey= :'hourlyvarkey'  \n
+		AND ( hourly.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400)  \n
+		AND ( hourly.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))  \n
+),  \n
+frac_daily_tile as (  \n
+	select frac.tstime, frac.tsendtime, frac.featureid,  \n
+	frac.entity_type,  \n
+	st_tile(frac.rast, 1, 16, 16) as rast,  \n
+	frac.bbox,  \n
+	frac.varid  \n
+	FROM frac_daily as frac  \n
+)  \n
+select finalFrac.tstime, finalFrac.tsendtime, finalFrac.featureid,  \n
+	finalFrac.varid,  \n
+	finalFrac.entity_type,  \n
+	finalFrac.rast,  \n
+	ST_ConvexHull(finalFrac.rast) as bbox  \n
+FROM frac_daily_tile as finalFrac  \n
+)  \n
+
+-- create an index  \n
+CREATE INDEX trast_ix ON ts_rast_tile USING bbox;  \n
+
 INSERT INTO dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid)  \n
-SELECT frac.* FROM frac_daily_final as frac  \n
+SELECT frac.* FROM ts_rast_tile as frac  \n
 LEFT JOIN dh_timeseries_weather as dupe  \n
 on (  \n
   frac.tstime = dupe.tstime  \n
