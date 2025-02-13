@@ -73,7 +73,7 @@ frac_daily_final as (
 	finalFrac.entity_type,
 	finalFrac.rast,
 	ST_ConvexHull(finalFrac.rast) as bbox
-	FROM frac_daily as frac_daily_tile
+	FROM frac_daily_tile as finalFrac
 
 )
 INSERT INTO dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid)  \n
