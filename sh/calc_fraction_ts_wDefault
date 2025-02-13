@@ -76,11 +76,10 @@ select finalFrac.tstime, finalFrac.tsendtime, finalFrac.featureid,  \n
 	finalFrac.entity_type,  \n
 	finalFrac.rast,  \n
 	ST_ConvexHull(finalFrac.rast) as bbox  \n
-FROM frac_daily_tile as finalFrac  \n
+FROM frac_daily_tile as finalFrac;  \n
 )  \n
 
--- create an index  \n
-CREATE INDEX trast_ix ON ts_rast_tile USING bbox;  \n
+CREATE INDEX trast_ix ON ts_rast_tile USING GIST(bbox);  \n
 
 INSERT INTO dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid)  \n
 SELECT frac.* FROM ts_rast_tile as frac  \n
