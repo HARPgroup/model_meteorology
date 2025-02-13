@@ -82,7 +82,10 @@ FROM frac_daily_tile as finalFrac  \n
 CREATE INDEX trast_ix ON ts_rast_tile USING GIST(bbox);  \n
 
 INSERT INTO dh_timeseries_weather ( tstime,tsendtime, featureid, entity_type, rast, bbox, varid)  \n
-SELECT frac.* FROM ts_rast_tile as frac  \n
+SELECT frac.tstime,frac.tsendtime,frac.featureid,frac.entity_type,
+frac.rast,frac.bbox,
+frac.varid
+FROM ts_rast_tile as frac  \n
 LEFT JOIN dh_timeseries_weather as dupe  \n
 on (  \n
   frac.tstime = dupe.tstime  \n
