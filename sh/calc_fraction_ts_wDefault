@@ -65,11 +65,13 @@ frac_daily_tile as (
 	select frac.tstime, frac.tsendtime, frac.featureid,
 	frac.entity_type,
 	st_tile(frac.rast, 1, 16, 16) as rast,
-	frac.bbox
+	frac.bbox,
+	frac.varid
 	FROM frac_daily as frac
 ),
 frac_daily_final as (
 	select finalFrac.tstime, finalFrac.tsendtime, finalFrac.featureid,
+	finalFrac.varid,
 	finalFrac.entity_type,
 	finalFrac.rast,
 	ST_ConvexHull(finalFrac.rast) as bbox
