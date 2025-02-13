@@ -76,8 +76,8 @@ select finalFrac.tstime, finalFrac.tsendtime, finalFrac.featureid,  \n
 	finalFrac.entity_type,  \n
 	finalFrac.rast,  \n
 	ST_ConvexHull(finalFrac.rast) as bbox  \n
-FROM frac_daily_tile as finalFrac;  \n
-)  \n
+FROM frac_daily_tile as finalFrac  \n
+);  \n
 
 CREATE INDEX trast_ix ON ts_rast_tile USING GIST(bbox);  \n
 
