@@ -38,7 +38,7 @@ rseg_model <- RomProperty$new(ds, list(featureid=riverseg_feature$hydroid, propc
 rseg_nested <- ds$get_json_prop(rseg_model$pid)
 
 
-model_metric = 'l07_Qout'
+model_metric = 'max3_Qout'
 riv_df <- data.frame( model_version='cbp-6.1',runid='pubsheds',metric=model_metric,runlabel='PRISM')
 riv_df <- rbind(riv_df, c('cbp-6.1', 'subsheds', model_metric, 'NLDAS'))
 riv_df <- rbind(riv_df, c('usgs-2.0', 'usgs', model_metric, 'USGS'))
@@ -51,7 +51,10 @@ riv_data$riverseg <- gsub("vahydrosw_wshed_", "", riv_data$hydrocode)
 riv_data$nldas2_error <- (riv_data$NLDAS - riv_data$USGS) / riv_data$USGS
 riv_data$vahydro_error <- (riv_data$vahydro - riv_data$USGS) / riv_data$USGS
 riv_data$prism_error <- (riv_data$PRISM - riv_data$USGS) / riv_data$USGS
+max(riv_data$USGS,na.rm=TRUE)
 potomac_lf <- fn_extract_basin(riv_data, "PM7_4820_0001")
+potomac_lf <- sqldf("select * from potomac_lf where USGS is not null")
+max(potomac_lf$USGS,na.rm=TRUE)
 #potomac_lf = riv_data
 boxplot(
   potomac_lf$nldas2_error,
