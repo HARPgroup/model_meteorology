@@ -1,0 +1,174 @@
+#!/bin/bash
+
+#This script knits together (e.g. amalgamates) two rasters in dh_timeseries_weather based on a key raster
+#Arugments to this function should be in the following order:
+#1 = TS_START_IN = The start time used to identify the key raster and that represents the amalgamated raster
+#2 = TS_END_IN = The end time used to identify the key raster and that represents the amalgamated raster
+#3 = RESAMPLE_VARKEY = The varkey used to identify the raster in raster_templates of the final resolution for the amalgamation
+#4 = AMALGAMATE_SCENARIO = The propname of the model scenario (property) that this data is stored under and the key raster is under
+#5 = AMALGAMATE_VARKEY = The varkey identifying the variable under which this data will be stred in dh_timeseries_weather
+#6 = RATINGS_VARKEY = The varkey used to identify the key raster that has cells that identify the raster to knit in e.g. the best fit raster to be amalgamated into that cell
+#7-8 = COVERAGE_BUNDLE,COVERAGE_FTYPE = The bundle, ftype describing any one coverage that was involved in the rating process for this amalgamation as identified by $scenarioName
+#9 = SCENARIO_NAME = The scenario that identifies the rating config file used to develop the ratings under geo workflow
+#10-12 = EXTENT_HYDROCODE,EXTENT_BUNDLE,EXTENT_FTYPE = The hydrocode, bundle, and ftype used to identify the base feature that this the model scenario is stored under, the CBP6 extent for the 2025 HARP project
+#13 = AMALGAMATE_SQL_FILE = A temporary file to write SQL to
+#14 = DELETE_TF = Should existing records be deleted? Should be TRUE or FALSE
+#15-16 = db_host, db_name = The host, name of the database in which data is and will be stored
+
+#We set up a local name reference to the config array passed in by the user to easily access its value
+#CAUTION: Changes to confignr likely impact the original array passed by user!
+if [ $# -lt 17 ]; then
+  echo "Use: amalgamate.sh TS_START_IN TS_END_IN RESAMPLE_VARKEY AMALGAMATE_SCENARIO AMALGAMATE_VARKEY RATINGS_VARKEY COVERAGE_BUNDLE COVERAGE_FTYPE SCENARIO_NAME EXTENT_HYDROCODE EXTENT_BUNDLE EXTENT_FTYPE AMALGAMATE_SQL_FILE DELETE_TF db_host db_name"
+  exit
+fi
+
+TS_START_IN=$1
+TS_END_IN=$2
+RESAMPLE_VARKEY=$3
+AMALGAMATE_SCENARIO=$4
+AMALGAMATE_VARKEY=$5
+RATINGS_VARKEY=$6
+COVERAGE_BUNDLE=$7
+COVERAGE_FTYPE=$8
+SCENARIO_NAME=$9
+EXTENT_HYDROCODE=${10}
+EXTENT_BUNDLE=${11}
+EXTENT_FTYPE=${12}
+AMALGAMATE_SQL_FILE=${13}
+DELETE_TF=${14}
+db_host=${15}
+db_name=${16}
+
+amalSQL="
+\\set tsstartin '$TS_START_IN'   \n
+\\set tsendin '$TS_END_IN'    \n
+\\set resample_varkey '$RESAMPLE_VARKEY'    \n
+\\set amalgamate_scenario '$AMALGAMATE_SCENARIO'    \n
+\\set amalgamate_varkey '$AMALGAMATE_VARKEY'    \n
+\\set ratings_varkey '$RATINGS_VARKEY'   \n
+\\set coverage_bundle '$COVERAGE_BUNDLE'    \n
+\\set coverage_ftype '$COVERAGE_FTYPE'    \n
+\\set scenarioName '$SCENARIO_NAME'   \n
+   \n
+select hydroid as covid from dh_feature   \n
+where hydrocode = '$EXTENT_HYDROCODE' and bundle = '$EXTENT_BUNDLE'   \n
+AND ftype = '$EXTENT_FTYPE' \\gset   \n
+   \n
+SELECT scen.pid as scenariopid    \n
+FROM dh_properties as scen    \n
+LEFT JOIN dh_properties as model   \n 
+ON model.pid =  scen.featureid    \n
+LEFT JOIN dh_feature as feat    \n
+on feat.hydroid = model.featureid    \n
+WHERE feat.hydroid = :'covid'     \n
+and scen.propname = :'amalgamate_scenario' \\gset   \n
+   \n
+SELECT scen.propcode as scenVarkey   \n
+FROM dh_properties as scen    \n
+LEFT JOIN dh_properties as model    \n
+ON model.pid =  scen.featureid    \n
+LEFT JOIN dh_feature as feat    \n
+on feat.hydroid = model.featureid   \n
+LEFT JOIN dh_properties as propVar   \n
+ON propVar.featureid = scen.pid    \n
+WHERE scen.propname = :'scenarioName'   \n
+AND feat.bundle = :'coverage_bundle'   \n
+AND feat.ftype = :'coverage_ftype'   \n
+LIMIT 1 \gset   \n
+   \n
+SELECT v.hydroid as scenVarID   \n
+FROM dh_variabledefinition as v   \n
+WHERE v.varkey = :'scenVarkey' \\gset   \n
+   \n
+SELECT hydroid AS ratings FROM dh_variabledefinition WHERE varkey = :'amalgamate_varkey' \\gset   \n
+SELECT hydroid AS keyratings FROM dh_variabledefinition WHERE varkey = :'ratings_varkey' \\gset   \n
+"
+
+
+if $DELETE_YN; then
+	amalSQL="${amalSQL} \n
+	DELETE FROM dh_timeseries_weather    \n
+	WHERE varid = :ratings     \n
+	AND entity_type = 'dh_properties'    \n
+	AND tstime = :tsstartin    \n
+	AND tsendtime = :tsendin    \n
+	AND featureid = :scenariopid;   \n
+	   \n
+	WITH varidRaster as (   \n
+	SELECT *   \n
+	FROM dh_timeseries_weather   \n
+	WHERE tstime = :tsstartin   \n
+	AND tsendtime = :tsendin   \n
+	AND featureid = :scenariopid   \n
+	AND varid = :keyratings   \n
+	AND entity_type = 'dh_properties'   \n
+	)   \n
+	"
+else
+	amalSQL="${amalSQL} \n
+	WITH varidRaster as (   \n
+	SELECT *   \n
+	FROM dh_timeseries_weather   \n
+	WHERE tstime = :tsstartin   \n
+	AND tsendtime = :tsendin   \n
+	AND featureid = :scenariopid   \n
+	AND varid = :ratings   \n
+	AND entity_type = 'dh_properties'   \n
+	)   \n
+	"
+)
+fi
+
+amalSQL="${amalSQL} \n
+, resamp as (   \n
+	SELECT ST_Resample(   \n
+		ST_Union(met.rast),   \n
+		rt.rast   \n
+	) as rast,   \n
+	v.varkey   \n
+	FROM dh_timeseries_weather as met   \n
+	LEFT JOIN dh_variabledefinition as v   \n
+	ON v.hydroid = met.varid   \n
+	LEFT JOIN (select rast from raster_templates where varkey = :'resample_varkey')   \n
+	ON 1 = 1   \n
+	WHERE met.tstime = :tsstartin   \n
+	AND met.tsendtime = :tsendin   \n
+	AND v.varkey = :'scenVarkey'   \n
+	AND met.featureid = :covid   \n
+	GROUP BY v.varkey   \n
+)   \n
+,amalgamate as (   \n
+	SELECT ST_Union(amalgamate.rast,'LAST') as rast   \n
+	FROM (   \n
+		SELECT ST_SetBandNoDataValue(var.rast,:scenVarID) as rast   \n
+		FROM varidRaster   \n
+		UNION ALL   \n
+		SELECT rast   \n
+		FROM resamp   \n
+		WHERE varkey = :'scenVarkey'   \n
+	) as amalgamate   \n
+)   \n
+   \n
+INSERT INTO dh_timeseries_weather (tstime,tsendtime, featureid, entity_type, rast, bbox, varid) \n
+SELECT :tsstartin,:tsendin,:scenariopid,'dh_properties',  \n
+amalgamate.rast,    \n
+ST_ConvexHull(amalgamate.rast), :ratings  \n
+FROM amalgamate as fr   \n
+RETURNING tid;   \n
+   \n
+UPDATE dh_timeseries_weather SET rast = amalgamte.rast   \n
+FROM amalgamate   \n
+WHERE dh_timeseries_weather.tstime = :tsstartin   \n
+AND dh_timeseries_weather.tstime = :tsendin   \n
+AND dh_timeseries_weather.featureid = :scenariopid   \n
+AND dh_timeseries_weather.entity_type = 'dh_properties'   \n
+AND dh_timeseries_weather.varid = :ratings   \n
+"
+
+# turn off the expansion of the asterisk
+set -f
+echo "Writing sql insert to $AMALGAMATE_SQL_FILE"
+#Delete previous dh_timeseries entries
+echo $amalSQL
+echo -e $amalSQL > $AMALGAMATE_SQL_FILE 
+#Check if TRUE FALSE works and check SCENARIO TO RANK to ensure proper format for for loop e.g. are there parentheses?
