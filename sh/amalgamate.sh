@@ -17,7 +17,7 @@
 
 #We set up a local name reference to the config array passed in by the user to easily access its value
 #CAUTION: Changes to confignr likely impact the original array passed by user!
-if [ $# -lt 17 ]; then
+if [ $# -lt 16 ]; then
   echo "Use: amalgamate.sh TS_START_IN TS_END_IN RESAMPLE_VARKEY AMALGAMATE_SCENARIO AMALGAMATE_VARKEY RATINGS_VARKEY COVERAGE_BUNDLE COVERAGE_FTYPE SCENARIO_NAME EXTENT_HYDROCODE EXTENT_BUNDLE EXTENT_FTYPE AMALGAMATE_SQL_FILE DELETE_TF db_host db_name"
   exit
 fi
