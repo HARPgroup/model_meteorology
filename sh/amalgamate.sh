@@ -14,13 +14,14 @@
 #13 = AMALGAMATE_SQL_FILE = A temporary file to write SQL to
 #14 = DELETE_TF = Should existing records be deleted? Should be TRUE or FALSE
 #15-16 = db_host, db_name = The host, name of the database in which data is and will be stored
+#17 = PROP_VAR_NAME = The property name used to identify the property stored on the scenario that contains the raw precip raster varkey
 
 #This script takes the key raster (varid of best data set in each cell) and sets one varid to NULL. It then takes the resampled (to target resolution) raw precip
 #data and fills in the NULLs via a union such that we derive a product that has varids in the non-target cells and precip data in the cells that were of the target varid
 #This is then added to the dh_timeseries_weather and can be called for further manipulation. To allow us to use a loop for calling this script, the base raster is either the product of the
 #previous loop or the key raster and is controlled by the first statement in WITH. A temporary table is used to store the intermediate before a delete+insert adds It
 #to the database. Note that the final raster is reclassified to remove any negative values and instead replace them with a consistent no data value since NLDAS uses 9999 as nodatavalue and PRISM + daymet use -9999.
-if [ $# -lt 16 ]; then
+if [ $# -lt 17 ]; then
   echo "Use: amalgamate.sh TS_START_IN TS_END_IN RESAMPLE_VARKEY AMALGAMATE_SCENARIO AMALGAMATE_VARKEY RATINGS_VARKEY COVERAGE_BUNDLE COVERAGE_FTYPE SCENARIO_NAME EXTENT_HYDROCODE EXTENT_BUNDLE EXTENT_FTYPE AMALGAMATE_SQL_FILE DELETE_TF db_host db_name"
   exit
 fi
@@ -41,6 +42,7 @@ AMALGAMATE_SQL_FILE=${13}
 KEYRASTER_YN=${14}
 db_host=${15}
 db_name=${16}
+PROP_VAR_NAME=${17}
 
 #First, set important variable in SQL session
 amalSQL="
@@ -53,6 +55,7 @@ amalSQL="
 \\set coverage_bundle '$COVERAGE_BUNDLE'    \n
 \\set coverage_ftype '$COVERAGE_FTYPE'    \n
 \\set scenarioName '$SCENARIO_NAME'   \n
+\\set prop_var_name '$PROP_VAR_NAME'   \n
    \n
 select hydroid as covid from dh_feature   \n
 where hydrocode = '$EXTENT_HYDROCODE' and bundle = '$EXTENT_BUNDLE'   \n
@@ -76,6 +79,7 @@ on feat.hydroid = model.featureid   \n
 LEFT JOIN dh_properties as propVar   \n
 ON propVar.featureid = scen.pid    \n
 WHERE scen.propname = :'scenarioName'   \n
+AND propVar.propname = :'prop_var_name'   \n
 AND feat.bundle = :'coverage_bundle'   \n
 AND feat.ftype = :'coverage_ftype'   \n
 LIMIT 1 \gset   \n
