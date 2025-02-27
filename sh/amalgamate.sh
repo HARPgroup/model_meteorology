@@ -35,7 +35,7 @@ EXTENT_HYDROCODE=${10}
 EXTENT_BUNDLE=${11}
 EXTENT_FTYPE=${12}
 AMALGAMATE_SQL_FILE=${13}
-DELETE_TF=${14}
+KEYRASTER_YN=${14}
 db_host=${15}
 db_name=${16}
 
@@ -63,7 +63,7 @@ on feat.hydroid = model.featureid    \n
 WHERE feat.hydroid = :'covid'     \n
 and scen.propname = :'amalgamate_scenario' \\gset   \n
    \n
-SELECT scen.propcode as scenVarkey   \n
+SELECT propVar.propcode as scenvarkey   \n
 FROM dh_properties as scen    \n
 LEFT JOIN dh_properties as model    \n
 ON model.pid =  scen.featureid    \n
@@ -76,92 +76,96 @@ AND feat.bundle = :'coverage_bundle'   \n
 AND feat.ftype = :'coverage_ftype'   \n
 LIMIT 1 \gset   \n
    \n
-SELECT v.hydroid as scenVarID   \n
+SELECT v.hydroid as scenvarid   \n
 FROM dh_variabledefinition as v   \n
-WHERE v.varkey = :'scenVarkey' \\gset   \n
+WHERE v.varkey = :'scenvarkey' \\gset   \n
    \n
 SELECT hydroid AS ratings FROM dh_variabledefinition WHERE varkey = :'amalgamate_varkey' \\gset   \n
 SELECT hydroid AS keyratings FROM dh_variabledefinition WHERE varkey = :'ratings_varkey' \\gset   \n
 "
 
 
-if $DELETE_YN; then
+if $KEYRASTER_YN; then
 	amalSQL="${amalSQL} \n
-	DELETE FROM dh_timeseries_weather    \n
-	WHERE varid = :ratings     \n
-	AND entity_type = 'dh_properties'    \n
-	AND tstime = :tsstartin    \n
-	AND tsendtime = :tsendin    \n
-	AND featureid = :scenariopid;   \n
-	   \n
-	WITH varidRaster as (   \n
-	SELECT *   \n
-	FROM dh_timeseries_weather   \n
-	WHERE tstime = :tsstartin   \n
-	AND tsendtime = :tsendin   \n
-	AND featureid = :scenariopid   \n
-	AND varid = :keyratings   \n
-	AND entity_type = 'dh_properties'   \n
-	)   \n
+	CREATE TEMP TABLE tmp_amalgamate as (       \n
+		WITH varidRaster as (     \n
+			SELECT *     \n
+			FROM dh_timeseries_weather     \n
+			WHERE tstime = :tsstartin     \n
+				AND tsendtime = :tsendin     \n
+				AND featureid = :scenariopid     \n
+				AND varid = :keyratings     \n
+				AND entity_type = 'dh_properties'     \n
+	)     \n
 	"
 else
 	amalSQL="${amalSQL} \n
-	WITH varidRaster as (   \n
-	SELECT *   \n
-	FROM dh_timeseries_weather   \n
-	WHERE tstime = :tsstartin   \n
-	AND tsendtime = :tsendin   \n
-	AND featureid = :scenariopid   \n
-	AND varid = :ratings   \n
-	AND entity_type = 'dh_properties'   \n
+	CREATE TEMP TABLE tmp_amalgamate as (  
+		WITH varidRaster as (   \n
+			SELECT *   \n
+			FROM dh_timeseries_weather   \n
+			WHERE tstime = :tsstartin   \n
+				AND tsendtime = :tsendin   \n
+				AND featureid = :scenariopid   \n
+				AND varid = :ratings   \n
+				AND entity_type = 'dh_properties'   \n
 	)   \n
 	"
 fi
 
 amalSQL="${amalSQL} \n
-, resamp as (   \n
-	SELECT ST_Resample(   \n
-		ST_Union(met.rast),   \n
-		rt.rast   \n
-	) as rast,   \n
-	v.varkey   \n
-	FROM dh_timeseries_weather as met   \n
-	LEFT JOIN dh_variabledefinition as v   \n
-	ON v.hydroid = met.varid   \n
-	LEFT JOIN (select rast from raster_templates where varkey = :'resample_varkey')   \n
-	ON 1 = 1   \n
-	WHERE met.tstime = :tsstartin   \n
-	AND met.tsendtime = :tsendin   \n
-	AND v.varkey = :'scenVarkey'   \n
-	AND met.featureid = :covid   \n
-	GROUP BY v.varkey   \n
-)   \n
-,amalgamate as (   \n
-	SELECT ST_Union(amalgamate.rast,'LAST') as rast   \n
-	FROM (   \n
-		SELECT ST_SetBandNoDataValue(var.rast,:scenVarID) as rast   \n
-		FROM varidRaster   \n
-		UNION ALL   \n
-		SELECT rast   \n
-		FROM resamp   \n
-		WHERE varkey = :'scenVarkey'   \n
-	) as amalgamate   \n
-)   \n
-   \n
-INSERT INTO dh_timeseries_weather (tstime,tsendtime, featureid, entity_type, rast, bbox, varid) \n
-SELECT :tsstartin,:tsendin,:scenariopid,'dh_properties',  \n
-amalgamate.rast,    \n
-ST_ConvexHull(amalgamate.rast), :ratings  \n
-FROM amalgamate as fr   \n
-RETURNING tid;   \n
-   \n
-UPDATE dh_timeseries_weather SET rast = amalgamte.rast   \n
-FROM amalgamate   \n
-WHERE dh_timeseries_weather.tstime = :tsstartin   \n
-AND dh_timeseries_weather.tstime = :tsendin   \n
-AND dh_timeseries_weather.featureid = :scenariopid   \n
-AND dh_timeseries_weather.entity_type = 'dh_properties'   \n
-AND dh_timeseries_weather.varid = :ratings   \n
+	, resamp as (     \n
+		SELECT      \n
+		ST_Resample(     \n
+			ST_Union(met.rast),     \n
+			rt.rast     \n
+		) as rast,     \n
+		v.varkey     \n
+		FROM dh_timeseries_weather as met     \n
+		LEFT JOIN dh_variabledefinition as v     \n
+		ON v.hydroid = met.varid     \n
+		LEFT JOIN (select rast from raster_templates where varkey = :'resample_varkey') as rt     \n
+		ON 1 = 1     \n
+		WHERE met.tsendtime >= :tsstartin     \n
+			AND met.tsendtime <= :tsendin     \n
+			AND v.varkey = :'scenvarkey'     \n
+			AND met.featureid = :covid     \n
+		GROUP BY v.varkey, rt.rast     \n
+	)     \n
+	,amalgamate as (     \n
+		SELECT ST_Union(amalgamate.rast,'LAST') as rast     \n
+		FROM (     \n
+			SELECT rast     \n
+			FROM resamp     \n
+			WHERE varkey = :'scenvarkey'     \n
+			UNION ALL     \n
+			SELECT ST_SetBandNoDataValue(var.rast,:scenvarid) as rast     \n
+			FROM varidRaster as var     \n
+		) as amalgamate     \n
+	)     \n
+	SELECT * FROM amalgamate     \n
+);     \n
+     \n
+DELETE FROM dh_timeseries_weather     \n
+WHERE varid = :ratings     \n
+	AND entity_type = 'dh_properties'     \n
+	AND tstime = :tsstartin     \n
+	AND tsendtime = :tsendin     \n
+	AND featureid = :scenariopid;     \n
+     \n
+INSERT INTO dh_timeseries_weather (tstime,tsendtime, featureid, entity_type, rast, bbox, varid)     \n
+SELECT :tsstartin,:tsendin,:scenariopid,'dh_properties',     \n
+	fr.rast,     \n
+	ST_ConvexHull(fr.rast),     \n
+	:ratings     \n
+FROM tmp_amalgamate as fr     \n
+LEFT JOIN dh_timeseries_weather as dupe     \n
+ON ( dupe.tstime = :tsstartin     \n
+		AND dupe.tsendtime = :tsendin     \n
+		AND dupe.featureid = :scenariopid     \n
+		AND dupe.varid = :ratings)     \n
+WHERE dupe.tid IS NULL     \n
+RETURNING tid;     \n
 "
 
 # turn off the expansion of the asterisk
