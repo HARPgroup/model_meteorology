@@ -116,7 +116,6 @@ else
 	AND entity_type = 'dh_properties'   \n
 	)   \n
 	"
-)
 fi
 
 amalSQL="${amalSQL} \n
