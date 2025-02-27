@@ -19,7 +19,7 @@
 #data and fills in the NULLs via a union such that we derive a product that has varids in the non-target cells and precip data in the cells that were of the target varid
 #This is then added to the dh_timeseries_weather and can be called for further manipulation. To allow us to use a loop for calling this script, the base raster is either the product of the
 #previous loop or the key raster and is controlled by the first statement in WITH. A temporary table is used to store the intermediate before a delete+insert adds It
-#to the database. Note that the final raster is reclassified to remove any negative values and instead replace them with a consistent no data value.
+#to the database. Note that the final raster is reclassified to remove any negative values and instead replace them with a consistent no data value since NLDAS uses 9999 as nodatavalue and PRISM + daymet use -9999.
 if [ $# -lt 16 ]; then
   echo "Use: amalgamate.sh TS_START_IN TS_END_IN RESAMPLE_VARKEY AMALGAMATE_SCENARIO AMALGAMATE_VARKEY RATINGS_VARKEY COVERAGE_BUNDLE COVERAGE_FTYPE SCENARIO_NAME EXTENT_HYDROCODE EXTENT_BUNDLE EXTENT_FTYPE AMALGAMATE_SQL_FILE DELETE_TF db_host db_name"
   exit
