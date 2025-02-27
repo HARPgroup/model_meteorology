@@ -42,6 +42,7 @@ KEYRASTER_YN=${14}
 db_host=${15}
 db_name=${16}
 
+#First, set important variable in SQL session
 amalSQL="
 \\set tsstartin '$TS_START_IN'   \n
 \\set tsendin '$TS_END_IN'    \n
@@ -87,7 +88,9 @@ SELECT hydroid AS ratings FROM dh_variabledefinition WHERE varkey = :'amalgamate
 SELECT hydroid AS keyratings FROM dh_variabledefinition WHERE varkey = :'ratings_varkey' \\gset   \n
 "
 
-
+#Depending on the $KEYRASTER_YN value supplied by user, decide whether the key raster (that which only has varids in each cell to identify the best data set)
+#or an existing amalgamated raster (which may have some remaining varids but also some precip data) should serve as the base product to which more data will be
+#amalgamated 
 if $KEYRASTER_YN; then
 	amalSQL="${amalSQL} \n
 	CREATE TEMP TABLE tmp_amalgamate as (       \n
@@ -116,6 +119,9 @@ else
 	"
 fi
 
+#Set the selected varid identified by the scenario input by user to no data and union the resampled precip data (resamp) to it
+#Then delete the existing amalgamation (if any) and add the newest version but set negative values to no data first to deal WITH
+#the different no data values between prism and daymet (-9999) and NLDAS2 (9999)
 amalSQL="${amalSQL} \n
 	, resamp as (     \n
 		SELECT      \n
