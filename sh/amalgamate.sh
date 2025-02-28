@@ -12,7 +12,7 @@
 #9 = SCENARIO_NAME = The scenario that identifies the rating config file used to develop the ratings under geo workflow
 #10-12 = EXTENT_HYDROCODE,EXTENT_BUNDLE,EXTENT_FTYPE = The hydrocode, bundle, and ftype used to identify the base feature that this the model scenario is stored under, the CBP6 extent for the 2025 HARP project
 #13 = AMALGAMATE_SQL_FILE = A temporary file to write SQL to
-#14 = DELETE_TF = Should existing records be deleted? Should be TRUE or FALSE
+#14 = KEYRASTER_YN = Should existing records be deleted? Should be TRUE or FALSE
 #15-16 = db_host, db_name = The host, name of the database in which data is and will be stored
 #17 = PROP_VAR_NAME = The property name used to identify the property stored on the scenario that contains the raw precip raster varkey
 
