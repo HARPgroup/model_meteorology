@@ -60,7 +60,6 @@ WHERE tstime = :tsstartin   \n
 	AND featureid = :scenariopid   \n
 	AND varid = :ratings   \n
 	AND entity_type = 'dh_properties'   \n
-)   \n
 "
 
 # turn off the expansion of the asterisk
