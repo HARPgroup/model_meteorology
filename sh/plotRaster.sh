@@ -71,7 +71,7 @@ echo -e $rasterSQL > $RASTER_SQL_FILE
 cat $RASTER_SQL_FILE | psql -h $db_host $db_name
 tid=$(psql -qtAX -h $db_host -d $db_name -f $RASTER_SQL_FILE)
 
-rasterPath="{TEMP_DIR}/raster.tiff"
+rasterPath="${TEMP_DIR}/raster.tiff"
 plotTempPath="${TEMP_DIR}/${RATINGS_VARKEY}_${TS_END_IN}.PNG"
 plotPath="${PATH_TO_PLOT}/${RATINGS_VARKEY}_${TS_END_IN}.PNG"
 
