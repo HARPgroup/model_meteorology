@@ -9,11 +9,12 @@
 #5-7 = EXTENT_HYDROCODE,EXTENT_BUNDLE,EXTENT_FTYPE = The hydrocode, bundle, and ftype used to identify the base feature that this the model scenario is stored under, the CBP6 extent for the 2025 HARP project
 #8 = RASTER_SQL_FILE = A temporary file to write SQL to
 #9-10 = db_host, db_name = The host, name of the database in which data is and will be stored
-#11 = Final path to store plot of raster
-#12 = Temporary directory to store intermediate products
+#11 = PATH_TO_PLOT = Final path to store plot of raster
+#12 = TEMP_DIR =Temporary directory to store intermediate products
+#13 = LIMIT_PLOT =Should plot be limited to VA extent?
 #This script finds a raster of interest in dh_timeseries_weather and exports it to a tiff using gdal_translate. 
 #An R script then writes the final product to a png file
-if [ $# -lt 12 ]; then
+if [ $# -lt 13 ]; then
   echo "Use: plotRaster.sh TS_START_IN TS_END_IN MODEL_SCENARIO RATINGS_VARKEY EXTENT_HYDROCODE EXTENT_BUNDLE EXTENT_FTYPE RASTER_SQL_FILE db_host db_name PATH_TO_PLOT TEMP_DIR"
   exit
 fi
@@ -30,6 +31,7 @@ db_host=${9}
 db_name=${10}
 PATH_TO_PLOT=${11}
 TEMP_DIR=${12}
+LIMIT_PLOT=${13}
 
 #First, set important variable in SQL session
 rasterSQL="
@@ -79,8 +81,8 @@ echo "Found tid = $tid for plot"
 echo "Calling :gdal_translate -of GTiff PG:\"host=192.168.0.21 port=5432 sslmode=disable user=postgres dbname=$db_name schema=public table=dh_timeseries_weather column=rast where='tid = $tid'\" $rasterPath"
 gdal_translate -of GTiff PG:"host=192.168.0.21 port=5432 sslmode=disable user=postgres dbname=$db_name schema=public table=dh_timeseries_weather column=rast where='tid = $tid'" $rasterPath
 
-echo "Calling: Rscript $META_MODEL_ROOT/scripts/river/usgsdata.R ${rasterPath} $plotTempPath"
-Rscript ${MET_SCRIPT_PATH}/sh/plotRaster.R $rasterPath $plotTempPath
+echo "Calling: Rscript $META_MODEL_ROOT/scripts/river/usgsdata.R ${rasterPath} $plotTempPath $LIMIT_PLOT"
+Rscript ${MET_SCRIPT_PATH}/sh/plotRaster.R $rasterPath $plotTempPath $LIMIT_PLOT
 
 # note: the install -D command create the destination directory path if it doesn't exist
 echo "Running: install -D $plotTempPath $plotPath"
