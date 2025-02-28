@@ -32,10 +32,10 @@ png(path_to_write,
     units = "in", res = 300)
 #Limit plot extent per user request
 if(as.logical(plot_limit)){
-  plot(aTest, axes = TRUE,
+  plot(rasterIn, axes = TRUE,
        ylim = c(36,40.5),
        xlim = c(-84,-77)) 
 }else{
-  plot(aTest, axes = TRUE) 
+  plot(rasterIn, axes = TRUE) 
 }
 dev.off()
