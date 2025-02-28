@@ -76,8 +76,8 @@ plotTempPath="${TEMP_DIR}/${RATINGS_VARKEY}_${TS_END_IN}.PNG"
 plotPath="${PATH_TO_PLOT}/${RATINGS_VARKEY}_${TS_END_IN}.PNG"
 
 echo "Found tid = $tid for plot"
-echo "Calling :gdal_translate -of GTiff PG:\"host=192.168.0.21 port=5432 sslmode=disable user=postgres dbname=$dbname schema=public table=dh_timeseries_weather column=rast where='tid = $tid'\" $rasterPath"
-gdal_translate -of GTiff PG:"host=192.168.0.21 port=5432 sslmode=disable user=postgres dbname=$dbname schema=public table=dh_timeseries_weather column=rast where='tid = $tid'" $rasterPath
+echo "Calling :gdal_translate -of GTiff PG:\"host=192.168.0.21 port=5432 sslmode=disable user=postgres dbname=$db_name schema=public table=dh_timeseries_weather column=rast where='tid = $tid'\" $rasterPath"
+gdal_translate -of GTiff PG:"host=192.168.0.21 port=5432 sslmode=disable user=postgres dbname=$db_name schema=public table=dh_timeseries_weather column=rast where='tid = $tid'" $rasterPath
 
 echo "Calling: Rscript $META_MODEL_ROOT/scripts/river/usgsdata.R ${rasterPath} $plotTempPath"
 Rscript ${MET_SCRIPT_PATH}/sh/plotRaster.R $rasterPath $plotTempPath
