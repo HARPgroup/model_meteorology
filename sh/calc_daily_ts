@@ -34,7 +34,7 @@ from daily_data
 ) \n
 
 insert into dh_timeseries_weather (tstime,tsendtime, featureid, entity_type, rast, bbox, varid) \n
-select data.tstime,data.tsendtime,date.featureid,data.entity_type,data.rast,data.bbox,data.varid
+select data.tstime,data.tsendtime,data.featureid,data.entity_type,data.rast,data.bbox,data.varid
 from wBBox as data \n
 left outer join dh_timeseries_weather as dupe \n
 on ( data.tstime = dupe.tstime
