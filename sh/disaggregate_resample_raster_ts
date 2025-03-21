@@ -2,24 +2,23 @@
 hydrocode=$1
 varkey=$2
 disaggregate_varkey=$3
-daily_varkey=$4
-resample_varkey=$5
-raster_sql_file=$6
-raster_sum_file=$7
-db_host=$8
-db_name=$9
-bundle=${10}
-ftype=${11}
-dissag_tz_offset=${12}
+resample_varkey=$4
+raster_sql_file=$5
+raster_sum_file=$6
+db_host=$7
+db_name=$8
+bundle=${9}
+ftype=${10}
+dissag_tz_offset=${11}
 start_epoch=-1
 end_epoch=-1
+if [ $# -gt 11 ]; then
+  start_epoch=${12}
+fi
 if [ $# -gt 12 ]; then
-  start_epoch=${13}
+  end_epoch=${13}
 fi
-if [ $# -gt 13 ]; then
-  end_epoch=${14}
-fi
-echo "called DISAGGREGATE_RESAMPLE_RASTER_TS $hydrocode $varkey $disaggregate_varkey $daily_varkey $resample_varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $dissag_tz_offset $start_epoch $end_epoch"
+echo "called DISAGGREGATE_RESAMPLE_RASTER_TS $hydrocode $varkey $disaggregate_varkey $resample_varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $dissag_tz_offset $start_epoch $end_epoch"
 echo "Checking bundle as ${bundle} and type as ${ftype}"
 #SQL query operates through a series of WITH statements:
 #usgs_features = Selecting the 1 feature from dh_feature_fielded to get hydroid and geometry
@@ -32,7 +31,6 @@ raster_sql="
 \\set hydrocode '$hydrocode' \n
 \\set varkey '$varkey' \n
 \\set disag_varkey '$disaggregate_varkey' \n
-\\set daily_varkey '$daily_varkey' \n
 \\set resample_varkey '$resample_varkey' \n
 \\set bundle '${bundle}' \n
 \\set ftype '${ftype}' \n
