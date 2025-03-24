@@ -1,0 +1,13 @@
+#!/bin/bash
+covid=$1
+amalgamate_scenario=$2
+
+
+SELECT scen.pid as scenariopid    \n
+FROM dh_properties as scen    \n
+LEFT JOIN dh_properties as model   \n
+ON model.pid =  scen.featureid    \n
+LEFT JOIN dh_feature as feat    \n
+on feat.hydroid = model.featureid    \n
+WHERE feat.hydroid = :'covid'     \n
+and scen.propname = :'amalgamate_scenario' \\gset

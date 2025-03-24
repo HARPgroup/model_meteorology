@@ -2,30 +2,28 @@
 hydrocode=$1
 varkey=$2
 disaggregate_varkey=$3
-daily_varkey=$4
-raster_sql_file=$5
-raster_sum_file=$6
-db_host=$7
-db_name=$8
-bundle=$9
-ftype=${10}
-dissag_tz_offset=${11}
+raster_sql_file=$4
+raster_sum_file=$5
+db_host=$6
+db_name=$7
+bundle=$8
+ftype=${9}
+dissag_tz_offset=${10}
 start_epoch=-1
 end_epoch=-1
+if [ $# -gt 10 ]; then
+  start_epoch=${11}
+fi
 if [ $# -gt 11 ]; then
-  start_epoch=${12}
+  end_epoch=${12}
 fi
-if [ $# -gt 12 ]; then
-  end_epoch=${13}
-fi
-echo "called DISAGGREGATE_RASTER_TS $hydrocode $varkey $disaggregate_varkey $daily_varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $start_epoch $end_epoch"
+echo "called DISAGGREGATE_RASTER_TS $hydrocode $varkey $disaggregate_varkey $raster_sql_file $raster_sum_file $db_host $db_name $bundle $ftype $start_epoch $end_epoch"
 echo "Checking bundle as ${bundle} and type as ${ftype}"
 raster_sql="
 \\set band '1' \n
 \\set hydrocode '$hydrocode' \n
 \\set varkey '$varkey' \n
 \\set disag_varkey '$disaggregate_varkey' \n
-\\set daily_varkey '$daily_varkey' \n
 \\set bundle '${bundle}' \n
 \\set ftype '${ftype}' \n
 \\set start_epoch $start_epoch \n 
@@ -35,6 +33,58 @@ raster_sql="
 select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\gset \n
 	
 \\\timing ON \n
+
+CREATE temp table ts_rast_tile as (  \n
+with daily_union as ( \n
+ SELECT min(daily.tstime) as tstime, \n
+        max(daily.tsendtime) as tsendtime,  \n
+        ST_UNION(daily.rast,'sum') as rast,  \n
+        daily_variable.hydroid as varid \n
+ FROM dh_timeseries_weather as daily  \n
+ LEFT JOIN dh_variabledefinition as daily_variable  \n
+ on (daily.varid = daily_variable.hydroid)  \n
+ WHERE daily_variable.varkey= :'varkey'  \n
+        AND ( daily.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400)  \n
+    AND ( daily.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))   \n
+ GROUP BY daily_variable.hydroid, extract(day from to_timestamp(daily.tstime - 43200) at time zone 'UTC') \n
+), \n
+frac_daily as (  \n
+ SELECT hourly.tstime,hourly.tsendtime, \n
+ hourly.featureid, hourly.entity_type, \n
+ st_mapalgebra( hourly.rast, 1, St_Reclass(daily.rast, 1, '[0-0]:1-1, [0.0000001-99999]:0.0000001-99999', '64BF',9999), 1, '[rast1]/ [rast2]' ) as rast,  \n
+ hourly.bbox,  \n
+ fraction.hydroid as varid  \n
+ FROM dh_timeseries_weather as hourly  \n
+ LEFT JOIN dh_variabledefinition as fraction  \n
+ ON (fraction.varkey = :'fractionvarkey')  \n
+ LEFT JOIN daily_union as daily  \n
+ ON (hourly.tsendtime > daily.tstime  \n
+  and hourly.tsendtime <= daily.tsendtime)  \n
+ LEFT JOIN dh_variabledefinition as hourly_variable  \n
+ on (hourly.varid = hourly_variable.hydroid)  \n
+ WHERE hourly_variable.varkey= :'hourlyvarkey'  \n
+        AND ( hourly.tsendtime >  extract(epoch from :'end_datetime'::timestamptz) - 86400)  \n
+        AND ( hourly.tsendtime <= extract(epoch from :'end_datetime'::timestamptz)) \n
+),
+frac_daily_tile as (
+        select frac.tstime, frac.tsendtime, frac.featureid,
+        frac.entity_type,
+        st_tile(frac.rast, 1, 16, 16) as rast,
+        frac.bbox,
+        frac.varid
+        FROM frac_daily as frac
+),
+select finalFrac.tstime, finalFrac.tsendtime, finalFrac.featureid,  \n
+        finalFrac.varid,  \n
+        finalFrac.entity_type,  \n
+        finalFrac.rast,  \n
+        ST_ConvexHull(finalFrac.rast) as bbox  \n
+FROM frac_daily_tile as finalFrac  \n
+);  \n
+
+CREATE INDEX trast_ix ON ts_rast_tile USING GIST(bbox);  \n
+
+
 CREATE TEMP TABLE tmp_metUnion as (  \n
  WITH usgs_features AS (  \n
    SELECT *  \n
