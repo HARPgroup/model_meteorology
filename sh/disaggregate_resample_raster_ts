@@ -140,7 +140,7 @@ copy (  \n
 	   LEFT JOIN tmp_metDisagg as frac  \n
 	   ON (  \n
 		 frac.tstime >= met.tstime  \n
-		 AND frac.tsendtime <= met.tsendtime  \n
+		 AND (frac.tsendtime - 1)<= met.tsendtime \n
 	   )  \n
 	   LEFT JOIN raster_templates as rt ON (rt.varkey = :'resample_varkey')   \n
 	 )  \n
