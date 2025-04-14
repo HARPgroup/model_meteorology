@@ -64,7 +64,7 @@ CREATE TEMP TABLE tmp_metUnion as (  \n
      LEFT JOIN dh_timeseries_weather as met  \n
      ON (met.varid = b.hydroid)  \n
      WHERE b.varkey=:'varkey'  \n
-		AND ( (met.tsendtime >= :start_epoch + :dissag_tz_offset) OR (:start_epoch = -1) )    \n
+		AND ( (met.tsendtime >= :start_epoch) OR (:start_epoch = -1) )    \n
 		AND ( (met.tsendtime <= (:end_epoch + :dissag_tz_offset)) OR (:end_epoch = -1) )    \n
        AND met.featureid = :covid  \n
    ) AS met  \n
