@@ -25,7 +25,6 @@ raster_sql="
 \\set bundle '${bundle}' \n
 \\set ftype '${ftype}' \n
 
-
 select hydroid as covid from dh_feature where hydrocode = 'cbp6_met_coverage' \\gset \n
 
 \\\timing ON \n

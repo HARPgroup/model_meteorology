@@ -95,7 +95,7 @@ CREATE TEMP TABLE tmp_metDisagg as (  \n
      FROM dh_variabledefinition as b  \n
      LEFT JOIN dh_timeseries_weather as fracmet  \n
        ON (fracmet.varid = b.hydroid)  \n
-       WHERE b.varkey=:'disag_varkey'  \n
+     WHERE b.varkey=:'disag_varkey'  \n
        AND ( (fracmet.tsendtime >= :start_epoch) OR (:start_epoch = -1) )  \n
        AND ( (fracmet.tsendtime <= :end_epoch) OR (:end_epoch = -1) )  \n
        AND fracmet.featureid = :covid  \n
