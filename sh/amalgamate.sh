@@ -139,8 +139,8 @@ amalSQL="${amalSQL} \n
 		ON v.hydroid = met.varid     \n
 		LEFT JOIN (select rast from raster_templates where varkey = :'resample_varkey') as rt     \n
 		ON 1 = 1     \n
-		WHERE met.tsendtime >= :tsstartin     \n
-			AND met.tsendtime <= :tsendin     \n
+		WHERE met.tstime <= :tsendin     \n
+			AND met.tsendtime >= :tsendin     \n
 			AND v.varkey = :'scenvarkey'     \n
 			AND met.featureid = :covid     \n
 		GROUP BY v.varkey, rt.rast     \n
