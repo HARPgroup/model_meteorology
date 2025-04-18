@@ -1,13 +1,30 @@
 #!/bin/bash
-covid=$1
+cov_hydrocode=$1
 amalgamate_scenario=$2
+amalgamate_varkey=$3
 
-
-SELECT scen.pid as scenariopid    \n
-FROM dh_properties as scen    \n
-LEFT JOIN dh_properties as model   \n
-ON model.pid =  scen.featureid    \n
-LEFT JOIN dh_feature as feat    \n
-on feat.hydroid = model.featureid    \n
-WHERE feat.hydroid = :'covid'     \n
-and scen.propname = :'amalgamate_scenario' \\gset
+sql="UPDATE dh_timeseries_weather set featureid = foo.fid, entity_type = 'dh_feature',
+  varid = foo.newvarid
+FROM  (
+  SELECT feat.hydroid AS fid, scen.pid AS scenariopid, avar.hydroid AS newvarid, ovar.hydroid AS oldvarid
+  FROM dh_properties AS scen
+  LEFT JOIN dh_properties AS model
+  ON model.pid = scen.featureid
+  LEFT JOIN dh_feature AS feat
+  on feat.hydroid = model.featureid
+  LEFT JOIN dh_variabledefinition AS avar
+  on (
+    avar.varkey = scen.propname
+  )
+  LEFT JOIN dh_variabledefinition AS ovar
+  on (
+    ovar.varkey = '$amalgamate_varkey'
+  )
+  WHERE feat.hydrocode = $cov_hydrocode
+ and scen.propname = '$amalgamate_scenario'
+) as foo
+WHERE entity_type = 'dh_properties'  
+  AND featureid = foo.scenariopid 
+  AND varid = oldvarid
+  AND foo.newvarid IS NOT NULL 
+;"
