@@ -1,4 +1,8 @@
 #!/bin/bash
+echo "********************* THIS SCRIPT disaggregate_raster_ts DOES NOT FUNCTION **********************"
+echo "ERROR: THIS SCRIPT disaggregate_raster_ts DOES NOT FUNCTION " >> problem
+exit
+
 hydrocode=$1
 varkey=$2
 disaggregate_varkey=$3
@@ -44,8 +48,8 @@ with daily_union as ( \n
  LEFT JOIN dh_variabledefinition as daily_variable  \n
  on (daily.varid = daily_variable.hydroid)  \n
  WHERE daily_variable.varkey= :'varkey'  \n
-        AND ( daily.tsendtime > extract(epoch from :'end_datetime'::timestamptz) - 86400)  \n
-    AND ( daily.tsendtime <= extract(epoch from :'end_datetime'::timestamptz))   \n
+        AND ( (daily.tsendtime >= :start_epoch) OR (:start_epoch = -1) )    \n
+        AND ( (daily.tsendtime <= (:end_epoch + :dissag_tz_offset)) OR (:end_epoch = -1) )    \n
  GROUP BY daily_variable.hydroid, extract(day from to_timestamp(daily.tstime - 43200) at time zone 'UTC') \n
 ), \n
 frac_daily as (  \n
@@ -63,8 +67,8 @@ frac_daily as (  \n
  LEFT JOIN dh_variabledefinition as hourly_variable  \n
  on (hourly.varid = hourly_variable.hydroid)  \n
  WHERE hourly_variable.varkey= :'hourlyvarkey'  \n
-        AND ( hourly.tsendtime >  extract(epoch from :'end_datetime'::timestamptz) - 86400)  \n
-        AND ( hourly.tsendtime <= extract(epoch from :'end_datetime'::timestamptz)) \n
+        AND ( (hourly.tsendtime >= :start_epoch) OR (:start_epoch = -1) )    \n
+        AND ( (hourly.tsendtime <= (:end_epoch + :dissag_tz_offset)) OR (:end_epoch = -1) )    \n
 ),
 frac_daily_tile as (
         select frac.tstime, frac.tsendtime, frac.featureid,
