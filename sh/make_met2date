@@ -1,5 +1,9 @@
 #!/bin/bash
 . hspf_config
+if [ $# -eq 0 ]; then
+  echo "Use: make_met2date basin/landseg sdate edate update_years(multiple ok \"yr1 yr2 ...\") [mode=basin,landseg]"
+  exit
+fi
 basin=$1
 sdate=$2
 edate=$3
