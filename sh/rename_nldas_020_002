@@ -1,0 +1,24 @@
+#!/bin/bash
+basedir="/backup/meteorology"
+for year in 2020 2021 2022 2023 2024 2025;do
+#for year in 2023;do
+  echo $year
+  ndays=`date -d "${year}-12-31" '+%j'`
+  # or, if in the middle of a year
+  #ndays=`date '+%j'`
+  sday=0
+  ndays=$((ndays - 1))
+  for j in `seq $sday $ndays`; do
+    jday=`date -d "${year}-01-01 $j days" '+%j'`
+    cd $basedir/$year/$jday
+    mdate=`date -d "${year}-01-01 $j days" '+%Y-%m-%d'`
+    ofiles=`ls *.grb`
+    for ofile in $ofiles; do
+      file_base=${ofile%.*}
+      file_base=${file_base%.*}
+      new_file="${file_base}.002.grb"
+      echo "mv $ofile $new_file"
+      mv $ofile $new_file
+    done
+  done
+done
