@@ -1,0 +1,59 @@
+#!/bin/bash
+# load db host and name
+. om_config
+if [ $# -lt 2 ]; then
+  echo "Use: qa_day_length varkey year [band (default=1)]"
+  exit
+fi
+varkey=$1
+yr=$2
+band=1
+if [ $# -gt 2 ]; then
+  band=$3
+fi
+
+sql="
+\\pset pager 0 \n
+\\set target_year $yr \n
+\\set varkey '$varkey' \n
+\\set band $band \n
+
+
+select * from (
+  select extract(year from to_timestamp(met.tsendtime)) as year,
+    extract(month from to_timestamp(met.tsendtime)) as month,
+    extract(day from to_timestamp(met.tsendtime)) as day,
+    min(to_timestamp(met.tsendtime)) as start_time,
+    max(to_timestamp(met.tsendtime)) as end_end,
+    count(*) as num_records,
+    round(0.0393701 * sum(precip_in)::numeric,1) as precip_in
+  from (
+    select met.tstime, met.tsendtime,
+      (ST_SummaryStatsAgg(met.rast, :band, TRUE)).mean as precip_in
+    from dh_feature as mcov
+    left outer join dh_variabledefinition as v
+    on (
+      v.varkey = :'varkey'
+    )
+    left outer join dh_timeseries_weather as met
+    on (
+      mcov.hydroid = met.featureid and met.varid = v.hydroid
+      and met.entity_type = 'dh_feature'
+    )
+    where mcov.hydrocode = 'cbp6_met_coverage'
+      and extract(year from to_timestamp(met.tsendtime)) = :target_year
+    group by met.tstime, met.tsendtime
+  ) as met
+  group by extract(year from to_timestamp(met.tsendtime)),
+    extract(month from to_timestamp(met.tsendtime)),
+    extract(day from to_timestamp(met.tsendtime))
+  order by extract(year from to_timestamp(met.tsendtime)), 
+    extract(month from to_timestamp(met.tsendtime)),
+    extract(day from to_timestamp(met.tsendtime))
+) as foo
+where num_records <> 24
+;
+"
+set -f
+echo -e 1>&2 $sql 
+echo -e $sql | psql -h $DB_HOST $DB_NAME
