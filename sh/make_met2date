@@ -20,7 +20,7 @@ basedir=$NLDAS_ROOT
 outdir="$basedir/out/grid_met_csv"
 lsegdir="$basedir/out/lseg_csv"
 # generate full met time period (needed due to potential updates in RNMax)
-
+echo "Update years requested: $update_years"
 if [ "$mode" == "basin" ]; then
   segs=`cbp get_landsegs $basin`
 else
@@ -48,8 +48,11 @@ for i in $segs; do
     else
       data_end="${yr}1231"
     fi
-    echo "grid2land.sh $data_start $data_end $basedir $outdir $i"
-    grid2land.sh $data_start $data_end $basedir $outdir $i
+    # add the hour on the end, after we have handled any calls to bash `date` function
+    data_start="${data_start}00"
+    data_end="${data_end}23"
+    echo "$NLDAS_ROOT/grid2land.sh $data_start $data_end $basedir $outdir $i"
+    $NLDAS_ROOT/grid2land.sh $data_start $data_end $basedir $outdir $i
   done
   cd /opt/model/p6/vadeq
   # convert grid CSVs into land segment CSVs
@@ -62,3 +65,4 @@ done
 # set up the met2date
 rm /backup/meteorology/out/lseg_csv/met2date
 ln -s /backup/meteorology/out/lseg_csv/${sdatemins}-${edatemins} /backup/meteorology/out/lseg_csv/met2date
+echo "Finished make_met2date"

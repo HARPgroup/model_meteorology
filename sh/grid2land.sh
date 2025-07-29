@@ -1,7 +1,8 @@
 #!/bin/bash
 #sDate = start date in the format YYYYMMDDHH
 #eDate = end date in the format YYYYMMDDHH
-
+. hspf_config
+echo "NLDAS_ROOT = $NLDAS_ROOT"
 # declaring arguments and telling user what they are
 echo "The start date of the timeframe is $1"
 sDate=$1
@@ -23,15 +24,7 @@ eMonth=$(echo $eDate | cut -c5-6)
 eDay=$(echo $eDate | cut -c7-8)
 eHour=$(echo $eDate | cut -c9-10)
 
-# get the grid cells for the requested land unit 
-land_cfg=`fgrep -h $landname seg_maps/* | head -n 1`
-# yields a param pair list in format x371y99
-met_land_cells=${land_cfg/$landname/}
-# use a // to escape x I think
-met_land_cells=${met_land_cells//x/}
-# replace y with aspace use a // to escape y I think
-met_land_cells=${met_land_cells//y/ }
-
+met_land_cells=`$NLDAS_ROOT/nldas_land_cells $landname`
 # @todo: use the date function to see if we can tell which cells 
 #        have already been processed, and then omit them 
 # get the modified timestamp of the target file ion seconds since the epoch

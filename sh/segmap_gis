@@ -1,0 +1,30 @@
+#!/bin/bash
+. om_config
+
+if [ $# -lt 2 ]; then
+  echo 1>&2 "Use: segmap_gis landseg ftype"
+  echo 1>&2 "Ex: segmap_gis A51149 cbp532_landseg"
+  exit
+fi
+
+sql="
+\\set landseg '$1' \n
+\\set ftype '$2' \n
+\\pset pager 0 \n
+
+select :'landseg' || ' ' || count(seg_map.xy) || ' ' || string_agg(seg_map.xy, ' ')
+from (
+  select 'x' || x || 'y' || y as xy
+  from dh_feature_fielded as f
+  left outer join (
+    select (ST_PixelAsPoints(rast, 1)).*
+    from rastemp
+  ) as rastemp
+  on (
+    dh_geofield_geom && st_setsrid(rastemp.geom, 4326)
+  ) 
+  where hydrocode = :'landseg' and ftype = :'ftype'
+) as seg_map; "
+
+set -f
+echo -e $sql | psql -h $DB_HOST $DB_NAME
