@@ -65,4 +65,8 @@ done
 # set up the met2date
 rm /backup/meteorology/out/lseg_csv/met2date
 ln -s /backup/meteorology/out/lseg_csv/${sdatemins}-${edatemins} /backup/meteorology/out/lseg_csv/met2date
+# TODO: when this gets into meta model this is already done in the config
+MET_EXPORT_DIR=`cbp get_config met2date met MET_EXPORT_DIR`
+cp $lseg_dir/${sdatemins}-${edatemins}/* $MET_EXPORT_DIR/met2date/lseg_csv/
+
 echo "Finished make_met2date"

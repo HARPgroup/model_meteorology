@@ -21,7 +21,7 @@ from (
     from rastemp
   ) as rastemp
   on (
-    dh_geofield_geom && st_setsrid(rastemp.geom, 4326)
+    dh_geofield_geom && rastemp.geom
   ) 
   where hydrocode = :'landseg' and ftype = :'ftype'
 ) as seg_map; "
