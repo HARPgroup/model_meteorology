@@ -1,0 +1,88 @@
+#!/bin/bash
+
+#This script is intended to download daymet data for the input range.
+#Data is downloaded as one netCDF per year, each raster having 365 bands
+#Only full years are downloaded but LEAP YEARS REMOVE DEC 31st!
+
+#Required inputs are:
+#$1 = Date of interest
+#$2 = Redownload year forcing, 1 or 0 and defaults to 0 (no forcing)
+#Note that maskExtent and config array need be defined prior to call
+dateIn=$1
+yearForcing="${3:-0}"
+
+configExt=".bil"
+
+#Date, datasource, temp directory
+#Get the year associated with the date
+YYYY=`date -d "${dateIn}" "+%Y"`
+#Get the julian day associated with the date
+jday=`date -d "${dateIn}" "+%j"`
+
+#Region - NA is used for conus. The complete list of regions is: na (North America), hi(Hawaii), pr(Puerto Rico)
+region="na"
+
+
+#Output file named for the full year archive. This will be the netCDF downloaded from daymet
+#Note that all parameters (temperature, precip, etc.) are included
+#in this download
+daymetAnnualName="${dataset}fullAnnual_${YYYY}.nc"
+daymetAnnual="${base_dir}/${YYYY}/${daymetAnnualName}"
+par="prcp"
+  
+#Evalute the user input configuration. Is the full year to be downloaded?
+#Is forcing on?
+#If the full year archive is not available, download and extract all days.
+#If it is available and forcing is on OR the request day is unavailable, extract
+#from the full year archive.
+if [ ! -f $daymetAnnual ] || [ $yearForcing -eq 1 ]; then
+  echo "Forcing new download of annual NC at ${daymetAnnual}"
+  #Download full year archive and extract all days:
+  wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --keep-session-cookies -O $daymetAnnual "https://data.ornldaac.earthdata.nasa.gov/protected/daymet/Daymet_Daily_V4R1/data/daymet_v4_daily_${region}_${par}_${YYYY}.nc"
+fi
+echo "Found annual NC at ${daymetAnnual}, extracting single day $jday"
+
+#Identify how many bands there are in the raster. For a full year download, 
+#this should be 365. However, we should evaluate this programmatically to 
+#be sure. Below, we get only the band numbers from gdal info by first 
+#searching in the pattern Band XX and then getting only the maximum number 
+#via a reverse sort
+numBands=`gdalinfo NETCDF:"${daymetAnnual}":prcp -nomd -norat | grep -oP "Band [0-9]* " | grep -oP "[0-9]*" | sort -nr | head -n1`
+ 
+#Find the dates associated with the bands, pulling the NETCDF dim time 
+#values from the metadata. This comes as 
+#NETCDF_DIM_time_VALUES={DATE1,DATE2,...,DATEN}
+#so we use pattern matching to find a repeating group using ()
+bandDates=`gdalinfo NETCDF:"${daymetAnnual}":prcp | grep -oP "NETCDF_DIM_time_VALUES.*" | grep -oP "([0-9]*\.?[0-9]*,?[0-9]*\.?[0-9]*)+"`
+ 
+#Origin for dates:
+dateOrigin=`gdalinfo NETCDF:"${daymetAnnual}":prcp | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*"`
+#GET ONLY DATE: ASSUMES 00:00:00 UTC!
+dateOriginNoTime=`gdalinfo NETCDF:"${daymetAnnual}":prcp | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*" | grep -oP "[0-9]+-[0-9]+-[0-9]+"`
+
+#Get the day associated with the current raster based on $bandDates above.
+#Use awk to search in a comma separated (-F ',') file for line $i.
+#Note the use of single quotes! Remove the decimal to floor down to an 
+#integer
+bandDatei=`echo $bandDates | awk -F ',' '{print $'$jday'}' | grep -oP "^[0-9]+"`
+#Dates are 1 day behind, add 1
+bandDatei=$(( $bandDatei + 1))
+   
+#bandDatei is the days since $dateOriginNoTime (ASSUMES dateOriginN)
+checkMetaDate=`date -d "${dateOriginNoTime} +$(( ${bandDatei} -1 ))days" +%Y-%m-%d`
+#Based on julian day (estimated based on assumption of complete dataset 
+#and the raster band number)
+checkJulianDate=`date -d "${YYYY}-01-01 +$(( ${jday} -1 ))days" +%Y-%m-%d`
+if [ "$checkMetaDate" != "$checkJulianDate" ]; then
+  echo "WARNING: Date in Meta data does NOT match the expected date for band ${i}!"
+fi
+    
+finalFile="ORIGINAL_${dataset}${checkJulianDate}${configExt}"
+    
+#Send this band to its own raster
+gdal_translate -b $jday NETCDF:"${daymetAnnual}":prcp -of "EHdr" $src_dir/$finalFile  
+echo "daymet data downloaded as NETCDF and translated to $finalFile"
+
+
+
+
