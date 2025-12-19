@@ -39,7 +39,7 @@ if [ ! -f $daymetAnnual ] || [ $yearForcing -eq 1 ]; then
   echo "Forcing new download of annual NC at ${daymetAnnual}"
   #Download full year archive and extract all days:
   wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --keep-session-cookies -O $daymetAnnual "https://data.ornldaac.earthdata.nasa.gov/protected/daymet/Daymet_Daily_V4R1/data/daymet_v4_daily_${region}_${par}_${YYYY}.nc"
-done
+fi
 echo "Found annual NC at ${daymetAnnual}, extracting single day $jday"
 
 #Identify how many bands there are in the raster. For a full year download, 
@@ -47,18 +47,18 @@ echo "Found annual NC at ${daymetAnnual}, extracting single day $jday"
 #be sure. Below, we get only the band numbers from gdal info by first 
 #searching in the pattern Band XX and then getting only the maximum number 
 #via a reverse sort
-numBands=`gdalinfo NETCDF:"${daymetOriginal}":prcp -nomd -norat | grep -oP "Band [0-9]* " | grep -oP "[0-9]*" | sort -nr | head -n1`
+numBands=`gdalinfo NETCDF:"${daymetAnnual}":prcp -nomd -norat | grep -oP "Band [0-9]* " | grep -oP "[0-9]*" | sort -nr | head -n1`
  
 #Find the dates associated with the bands, pulling the NETCDF dim time 
 #values from the metadata. This comes as 
 #NETCDF_DIM_time_VALUES={DATE1,DATE2,...,DATEN}
 #so we use pattern matching to find a repeating group using ()
-bandDates=`gdalinfo NETCDF:"${daymetOriginal}":prcp | grep -oP "NETCDF_DIM_time_VALUES.*" | grep -oP "([0-9]*\.?[0-9]*,?[0-9]*\.?[0-9]*)+"`
+bandDates=`gdalinfo NETCDF:"${daymetAnnual}":prcp | grep -oP "NETCDF_DIM_time_VALUES.*" | grep -oP "([0-9]*\.?[0-9]*,?[0-9]*\.?[0-9]*)+"`
  
 #Origin for dates:
-dateOrigin=`gdalinfo NETCDF:"${daymetOriginal}":prcp | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*"`
+dateOrigin=`gdalinfo NETCDF:"${daymetAnnual}":prcp | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*"`
 #GET ONLY DATE: ASSUMES 00:00:00 UTC!
-dateOriginNoTime=`gdalinfo NETCDF:"${daymetOriginal}":prcp | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*" | grep -oP "[0-9]+-[0-9]+-[0-9]+"`
+dateOriginNoTime=`gdalinfo NETCDF:"${daymetAnnual}":prcp | grep -oP "time#units=days since .*" | grep -oP "[0-9]+.*" | grep -oP "[0-9]+-[0-9]+-[0-9]+"`
 
 #Get the day associated with the current raster based on $bandDates above.
 #Use awk to search in a comma separated (-F ',') file for line $i.
