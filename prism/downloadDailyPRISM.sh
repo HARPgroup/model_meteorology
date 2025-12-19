@@ -7,18 +7,22 @@ function downloadPRISM()
 	#2= YYYY = Four digit year e.g. 2024
 	#3 = MM = Two digit month e.g. 05 for May
 	#4 = DD = Two-digit day e.g 09 for the 9th
-
 	#We set up a local name reference to the config array passed in by the user to easily access its value
 	#CAUTION: Changes to confignr likely impact the original array passed by user!
 	YYYY=$1
 	MM=$2
 	DD=$3
+        BASE_URI=$4
+        FILE_BASE=$5
+        FILE_EXT=$6
 	>&2 echo "Getting data from PRISM REST service..."
-	>&2 echo "Trying: wget http://services.nacse.org/prism/data/public/4km/ppt/$YYYY$MM$DD "
+	>&2 echo "Trying: wget $BASE_URI/$YYYY$MM$DD "
 	#Download and unzip the raster from the PRISM webservices
-	wget http://services.nacse.org/prism/data/public/4km/ppt/$YYYY$MM$DD
+	wget $BASE_URI/$YYYY$MM$DD
 	unzip $YYYY$MM$DD
-	download_name="PRISM_ppt_*${YYYY}${MM}${DD}_bil.bil"
+# was
+#	download_name="PRISM_ppt_*${YYYY}${MM}${DD}_bil.bil"
+	download_name="${FILE_BASE}${YYYY}${MM}${DD}.${FILE_EXT}"
 	#Check if file exists. Recent day may be provisional and have a different name than "stable" data.
 	#We send the output of compgen below to /dev/null bitbucket to ensure it doesn't echo anything to the terminal
 	if compgen -G $download_name > /dev/null; then
@@ -51,7 +55,7 @@ local -n confignr=$1
 
 echo "Getting data from REST..."
 #Download and unzip the raster from the PRISM webservices
-wget http://services.nacse.org/prism/data/public/4km/ppt/$YYYY$MM$DD
+wget $BASE_URI/$YYYY$MM$DD
 unzip $YYYY$MM$DD
 
 echo "Projecting raster..."

@@ -17,3 +17,4 @@ for example:
 COMPILE 
 - "make all" will create NLDAS2_GRIB_to_ASCII, but not NLDAS2_ASCII_to_LSegs
 - "make NLDAS2_ASCII_to_LSegs" will make NLDAS2_ASCII_to_LSegs (to do, add this to the "all" section)
+- "make LongTermAvgRNMax" will make the required RNMax file summaries

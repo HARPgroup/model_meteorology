@@ -1,5 +1,5 @@
 #!/bin/bash
-
+. hspf_config
 yr=$1
 if [ $# -lt 1 ]; then
   echo "Usage: get_nldas_to_dat year [ending jday=today] [force=0]"
@@ -39,7 +39,7 @@ fi
 
 while [ $last_day -le $day_till ]; do
   f_day=`printf "%03d" $last_day`
-  echo "get_nldas_data.bash $yr $f_day $yr"
-  ./get_nldas_data.bash $yr $f_day $yr
+  echo "get_nldas_data $yr $f_day $yr"
+  ./get_nldas_data $yr $f_day $NLDAS_ROOT
   last_day=$(($last_day + 1))
 done
