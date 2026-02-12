@@ -49,8 +49,10 @@ for i in $segs; do
       data_end="${yr}1231"
     fi
     # add the hour on the end, after we have handled any calls to bash `date` function
+    echo "Appending hours to data_start $data_start and data_end $data_end"
     data_start="${data_start}00"
     data_end="${data_end}23"
+    echo "Calling grid2land.sh with data_start $data_start and data_end $data_end"
     echo "$NLDAS_ROOT/grid2land.sh $data_start $data_end $basedir $outdir $i"
     $NLDAS_ROOT/grid2land.sh $data_start $data_end $basedir $outdir $i
   done
