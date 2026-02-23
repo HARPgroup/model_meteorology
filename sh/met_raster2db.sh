@@ -35,6 +35,7 @@ echo "Creating sql file to import raster..."
 #The -t option tiles the raster for easier loading
 tmp_sql_file=tmp_${datasource}-${tstime}-test.sql
 tmp_tbl_name="tmp_${datasource}_${tstime}"
+echo "Making SQL: raster2pgsql -d -t \"${tile_size}x${tile_size}\" $finalTiff $tmp_tbl_name > $tmp_sql_file"
 raster2pgsql -d -t "${tile_size}x${tile_size}" $finalTiff $tmp_tbl_name > $tmp_sql_file
 
 echo "Sending raster to db..."
