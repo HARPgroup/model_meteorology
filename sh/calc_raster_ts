@@ -65,7 +65,7 @@ copy (
 		group by met.featureid, met.tsendtime, met.tstime
 	),
 	met as (
-		Select met.featureid, to_timestamp(met.tsendtime) as obs_date,
+		Select f.hydroid, met.featureid, to_timestamp(met.tsendtime) as obs_date,
 			extract(year from to_timestamp(met.tsendtime)) as yr,
 			extract(month from to_timestamp(met.tsendtime)) as mo,
 			extract(day from to_timestamp(met.tsendtime)) as da,
@@ -81,7 +81,7 @@ copy (
 		JOIN metUnion AS met
 		ON ST_Intersects(ST_ConvexHull(met.rast),fgeo.dh_geofield_geom)
 	)
-	select featureid, obs_date, 
+	select hydroid,featureid, obs_date, 
 		tstime,tsendtime,
 		yr, mo, da, hr, 
 		0.0393701 * stats precip_in

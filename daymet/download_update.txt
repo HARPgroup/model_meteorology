@@ -1,0 +1,10 @@
+
+
+wget --http-user=connor.brogan --ask-password --keep-session-cookies -O testDaymet.nc "https://data.ornldaac.earthdata.nasa.gov/protected/daymet/Daymet_Daily_V4R1/data/daymet_v4_daily_na_prcp_2024.nc"
+
+daymetB3@tsPRISM?
+
+curl -b ~/.nocookies -L -n http://e4ftl01.cr.usgs.gov/MOLT/MOD13Q1.005/2016.08.28/MOD13Q1.A2016241.h00v08.005.2016258025246.hdf -o 
+
+
+wget --http-user=connor.brogan --ask-password --keep-session-cookies http://e4ftl01.cr.usgs.gov/ASTT/AST_L1T.003/2016.09.11/AST_L1T_00309112016020239_20160912100405_5264_QA.txt
